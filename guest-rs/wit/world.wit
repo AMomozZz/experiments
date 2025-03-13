@@ -1,0 +1,10 @@
+package pkg:component;
+
+interface nexmark {
+    // convert-currency
+    q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
+}
+
+world component {
+    export nexmark;
+}

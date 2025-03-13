@@ -20,11 +20,39 @@ use runtime::traits::Timestamp;
 use crate::data::Auction;
 use crate::data::Bid;
 use crate::data::Person;
+use wasmtime::{component::{Component, Linker, ResourceTable}, Config, Engine, Store};
+use wasmtime_wasi::{Pollable, bindings::sockets::tcp_create_socket::TcpSocket, WasiImpl};
 
 const USAGE: &str = "Usage: cargo run <data-dir> <query-id>";
 
 const WATERMARK_FREQUENCY: usize = 1000;
 const SLACK: Duration = Duration::from_milliseconds(100);
+
+// host
+struct Host {
+    ctx: wasmtime_wasi::WasiCtx,
+    table: ResourceTable,
+}
+
+impl wasmtime_wasi::WasiView for Host {
+    fn ctx(&mut self) -> &mut wasmtime_wasi::WasiCtx {
+        &mut self.ctx
+    }
+}
+
+impl wasmtime_wasi::IoView for Host {
+    fn table(&mut self) -> &mut ResourceTable {
+        &mut self.table
+    }
+}
+
+impl Host {
+    fn new() -> Self {
+        let ctx = wasmtime_wasi::WasiCtxBuilder::new().inherit_stdio().build();
+        let table = ResourceTable::new();
+        Self { ctx, table }
+    }
+}
 
 fn main() {
     let mut args = std::env::args().skip(1);
@@ -41,7 +69,23 @@ fn main() {
     let auctions = std::fs::File::open(&format!("{dir}/auctions.csv")).map(iter::<Auction>);
     let persons = std::fs::File::open(&format!("{dir}/persons.csv")).map(iter::<Person>);
 
+    let mut config = Config::new();
+    // config.async_support(true);
+    let engine = Engine::new(&config).unwrap();
+    let host = Host::new();
+
+    let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
+    let mut store = Store::new(&engine, wi);
+    let mut linker = Linker::new(&engine);
+    wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
+
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
+        let time = std::time::Instant::now();
+        CurrentThreadRunner::run(f);
+        eprintln!("{}", time.elapsed().as_millis());
+    }
+
+    fn timed_wasm(f: impl FnOnce(&mut Store<WasiImpl<Host>>) + Send + 'static) {
         let time = std::time::Instant::now();
         CurrentThreadRunner::run(f);
         eprintln!("{}", time.elapsed().as_millis());
@@ -84,6 +128,9 @@ fn main() {
             let step = args.next().unwrap().parse().unwrap();
             timed(move |ctx| qw::run_opt(stream(ctx, bids), size, step, ctx))
         }
+        // wasm
+        "q1-wasm" => timed_wasm(move |store| q1::run_wasm(stream(ctx, bids), store)),
+        // io
         "io" => {
             timed(move |ctx| {
                 if bids.is_ok() {
@@ -99,28 +146,6 @@ fn main() {
         }
         _ => panic!("unknown query"),
     }
-}
-
-// Memory-mapped CSV reader
-#[allow(unused)]
-fn iter_mmap<T: Data>(file: File) -> impl Iterator<Item = T> {
-    let mmap = unsafe {
-        memmap2::MmapOptions::new()
-            .map(&file)
-            .expect("Unable to map file")
-    };
-    mmap.advise(memmap2::Advice::Sequential).unwrap();
-    let mut reader = csv::de::Reader::<1024>::new(',');
-    let mut i = 0;
-    std::iter::from_fn(move || {
-        if i >= mmap.len() {
-            return None;
-        }
-        let mut deserializer = csv::de::Deserializer::new(&mut reader, &mmap[i..]);
-        let bid = T::deserialize(&mut deserializer).unwrap();
-        i += deserializer.nread;
-        Some(bid)
-    })
 }
 
 // Buffered CSV reader

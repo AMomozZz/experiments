@@ -1,0 +1,14 @@
+[workspace]
+
+[package]
+name = "component"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nexmark = { version = "0.2.0", features = ["serde"] }
+serde_json = "1.0.139"
+wit-bindgen = "0.39.0"
+
+[lib]
+crate-type = ["cdylib"]
