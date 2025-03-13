@@ -14,6 +14,23 @@ To run the experiments, install and startup [docker](https://docs.docker.com/) a
 ./docker.sh
 ```
 
+Or
+
+```bash
+cd root/
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --dir nexmark-data/q1
+```
+
+```bash
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/q1 io
+```
+
+and
+
+```bash
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/q1 q1
+```
+
 ## Output
 
 After running, plots of the experiments can be found in the generated `output/` folder.
