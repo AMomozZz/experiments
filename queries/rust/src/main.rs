@@ -10,8 +10,10 @@ pub mod q7;
 pub mod q8;
 pub mod qw;
 
+use std::cell::RefCell;
 use std::fs::File;
 use std::io::BufRead;
+use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -61,6 +63,12 @@ impl Host {
     }
 }
 
+// pub struct StoreWrapper(RefCell<Store<WasiImpl<Host>>>);
+
+// unsafe impl Send for StoreWrapper {}
+// unsafe impl Sync for StoreWrapper {}
+
+
 fn main() {
     let mut args = std::env::args().skip(1);
     let Some(dir) = args.next() else {
@@ -82,23 +90,26 @@ fn main() {
     let host = Host::new();
 
     let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
-    let mut store = Store::new(&engine, wi);
-    let mut linker: Linker<WasiImpl<Host>> = Linker::new(&engine);
-    let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
-    wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
+    // let store_wrapper = StoreWrapper(RefCell::new(Store::new(&engine, wi)));
+    let store_wrapper = Store::new(&engine, wi);
+    let func_print_typed = {
+        // let mut store = store_wrapper.0.borrow_mut();
+        let mut store = store_wrapper;
+        let mut linker = Linker::new(&engine);
+        let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
+        wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-    let instance = linker.instantiate(&mut store, &component).unwrap();
-    let arc_store = Arc::new(Mutex::new(store));
-
-    // let intf_export = instance
-    //     .get_export(&mut *store, None, "pkg:component/nexmark")
-    //     .unwrap();
-    // let func_print_export = instance
-    //     .get_export(&mut *store, Some(&intf_export), "q1")
-    //     .unwrap();
-    // let func_print_typed = instance
-    //     .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut *store, func_print_export)
-    //     .unwrap();
+        let instance = linker.instantiate(&mut store, &component).unwrap();
+        let intf_export = instance
+            .get_export(&mut store, None, "pkg:component/nexmark")
+            .unwrap();
+        let func_print_export = instance
+            .get_export(&mut store, Some(&intf_export), "q1")
+            .unwrap();
+        instance
+            .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut store, func_print_export)
+            .unwrap()
+    };
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
         let time = std::time::Instant::now();
@@ -106,6 +117,7 @@ fn main() {
         eprintln!("{}", time.elapsed().as_millis());
     }
 
+    // let store_wrapper = Arc::new(store);
     match query.as_str() {
         // Un-optimised
         "q1" => timed(move |ctx| q1::run(stream(ctx, bids), ctx)),
@@ -144,8 +156,8 @@ fn main() {
             timed(move |ctx| qw::run_opt(stream(ctx, bids), size, step, ctx))
         }
         // wasm
-        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, instance, arc_store)),
-        // "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, , arc_store)),
+        // "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, instance, arc_store)),
+        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, func_print_typed, store_wrapper)),
         // io
         "io" => {
             timed(move |ctx| {
