@@ -1,12 +1,10 @@
-use runtime::prelude::*;
-use wasmtime::Store;
-use crate::data::Bid;
-use wasmtime_wasi::WasiImpl;
+use core::time;
+use std::{process::exit, sync::{Arc, Mutex}};
 
-const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../guest-rs/target/wasm32-wasip2/release/component.wasm"
-));
+use runtime::prelude::{stream::operator, *};
+use wasmtime::{component::{Instance, Linker, TypedFunc}, Store};
+use crate::{data::Bid, Host};
+use wasmtime_wasi::{WasiCtx, WasiImpl};
 
 #[data]
 struct Output {
@@ -30,48 +28,53 @@ pub fn run_opt(bids: Stream<Bid>, ctx: &mut Context) {
     .drain(ctx);
 }
 // 26784, 28243, 27930, 35737, 37400, 43479
-// pub fn run_wasm(bids: Stream<Bid>, store: &mut Store<WasiImpl>) {
-//     bids.map(bids.ctx, move |bid| {
-//         let instance = linker.instantiate(&mut store, &component).unwrap();
-//         let intf_export = instance
-//             .get_export(&mut store, None, "pkg:component/nexmark")
-//             .unwrap();
-//         let func_print_export = instance
-//             .get_export(&mut store, Some(&intf_export), "q1")
-//             .unwrap();
-//         let func_print_typed = instance
-//             .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut store, func_print_export)
-//             .unwrap();
+// pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, func_typed: TypedFunc<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>, s: Arc<Mutex<Store<WasiImpl<Host>>>>) {
+//     bids.map(ctx, move |bid| {
+//         let mut store_guard  = s.lock().unwrap();
+//         let store: &mut Store<WasiImpl<Host>> = &mut *store_guard;
+        
+//         // let intf_export = instance
+//         //     .get_export(&mut *store, None, "pkg:component/nexmark")
+//         //     .unwrap();
+//         // let func_print_export = instance
+//         //     .get_export(&mut *store, Some(&intf_export), "q1")
+//         //     .unwrap();
+//         // let func_print_typed = instance
+//         //     .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut *store, func_print_export)
+//         //     .unwrap();
 
 //         let ((auction, price, bidder, date_time),) =
-//             func_print_typed.call(&mut store, (bid.auction, bid.price, bid.bidder, bid.date_time))
+//             func_typed.call(&mut *store, (bid.auction, bid.price, bid.bidder, bid.date_time))
 //             .unwrap();
-//         func_print_typed.post_return(store).unwrap();
+//         func_typed.post_return(store).unwrap();
 //         Output::new(auction, price, bidder, date_time)
 //     })
 //     .drain(ctx);
 // }
-pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context) { 
-    let engine = Engine::default();
-    let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
-    let linker = Linker::new(&engine);
-
+pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, instance: Instance, s: Arc<Mutex<Store<WasiImpl<Host>>>>) {
     bids.map(ctx, move |bid| {
-        let mut store = Store::new(&engine, ());
-        let instance = linker.instantiate(&mut store, &component).unwrap();
+        let time = std::time::Instant::now();
+        let mut store_guard  = s.lock().unwrap();
+        let store: &mut Store<WasiImpl<Host>> = &mut *store_guard;
+        // eprintln!("{}", time.elapsed().as_nanos());
+        
         let intf_export = instance
-            .get_export(&mut store, None, "pkg:component/nexmark")
+            .get_export(&mut *store, None, "pkg:component/nexmark")
             .unwrap();
         let func_print_export = instance
-            .get_export(&mut store, Some(&intf_export), "q1")
+            .get_export(&mut *store, Some(&intf_export), "q1")
             .unwrap();
         let func_print_typed = instance
-            .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut store, func_print_export)
+            .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut *store, func_print_export)
             .unwrap();
-
+        // eprintln!("{}", time.elapsed().as_nanos());
+        
         let ((auction, price, bidder, date_time),) =
-            func_print_typed.call(&mut store, (bid.auction, bid.price, bid.bidder, bid.date_time))
+            func_print_typed.call(&mut *store, (bid.auction, bid.price, bid.bidder, bid.date_time))
             .unwrap();
+        func_print_typed.post_return(store).unwrap();
+        // eprintln!("{}", time.elapsed().as_nanos());
+        // exit(0);
         Output::new(auction, price, bidder, date_time)
     })
     .drain(ctx);

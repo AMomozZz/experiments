@@ -12,6 +12,8 @@ pub mod qw;
 
 use std::fs::File;
 use std::io::BufRead;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
@@ -28,8 +30,13 @@ const USAGE: &str = "Usage: cargo run <data-dir> <query-id>";
 const WATERMARK_FREQUENCY: usize = 1000;
 const SLACK: Duration = Duration::from_milliseconds(100);
 
+const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../guest-rs/target/wasm32-wasip2/release/component.wasm"
+));
+
 // host
-struct Host {
+pub struct Host {
     ctx: wasmtime_wasi::WasiCtx,
     table: ResourceTable,
 }
@@ -76,16 +83,24 @@ fn main() {
 
     let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
     let mut store = Store::new(&engine, wi);
-    let mut linker = Linker::new(&engine);
+    let mut linker: Linker<WasiImpl<Host>> = Linker::new(&engine);
+    let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
     wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-    fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
-        let time = std::time::Instant::now();
-        CurrentThreadRunner::run(f);
-        eprintln!("{}", time.elapsed().as_millis());
-    }
+    let instance = linker.instantiate(&mut store, &component).unwrap();
+    let arc_store = Arc::new(Mutex::new(store));
 
-    fn timed_wasm(f: impl FnOnce(&mut Store<WasiImpl<Host>>) + Send + 'static) {
+    // let intf_export = instance
+    //     .get_export(&mut *store, None, "pkg:component/nexmark")
+    //     .unwrap();
+    // let func_print_export = instance
+    //     .get_export(&mut *store, Some(&intf_export), "q1")
+    //     .unwrap();
+    // let func_print_typed = instance
+    //     .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut *store, func_print_export)
+    //     .unwrap();
+
+    fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
         let time = std::time::Instant::now();
         CurrentThreadRunner::run(f);
         eprintln!("{}", time.elapsed().as_millis());
@@ -129,7 +144,8 @@ fn main() {
             timed(move |ctx| qw::run_opt(stream(ctx, bids), size, step, ctx))
         }
         // wasm
-        "q1-wasm" => timed_wasm(move |store| q1::run_wasm(stream(ctx, bids), store)),
+        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, instance, arc_store)),
+        // "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, , arc_store)),
         // io
         "io" => {
             timed(move |ctx| {
