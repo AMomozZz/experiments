@@ -63,10 +63,10 @@ impl Host {
     }
 }
 
-// pub struct StoreWrapper(RefCell<Store<WasiImpl<Host>>>);
+pub struct StoreWrapper(RefCell<Store<WasiImpl<Host>>>);
 
-// unsafe impl Send for StoreWrapper {}
-// unsafe impl Sync for StoreWrapper {}
+unsafe impl Send for StoreWrapper {}
+unsafe impl Sync for StoreWrapper {}
 
 
 fn main() {
@@ -90,24 +90,22 @@ fn main() {
     let host = Host::new();
 
     let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
-    // let store_wrapper = StoreWrapper(RefCell::new(Store::new(&engine, wi)));
-    let store_wrapper = Store::new(&engine, wi);
+    let store_wrapper = StoreWrapper(RefCell::new(Store::new(&engine, wi)));
     let func_print_typed = {
-        // let mut store = store_wrapper.0.borrow_mut();
-        let mut store = store_wrapper;
+        let mut store = store_wrapper.0.borrow_mut();
         let mut linker = Linker::new(&engine);
         let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
         wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-        let instance = linker.instantiate(&mut store, &component).unwrap();
+        let instance = linker.instantiate(&mut *store, &component).unwrap();
         let intf_export = instance
-            .get_export(&mut store, None, "pkg:component/nexmark")
+            .get_export(&mut *store, None, "pkg:component/nexmark")
             .unwrap();
         let func_print_export = instance
-            .get_export(&mut store, Some(&intf_export), "q1")
+            .get_export(&mut *store, Some(&intf_export), "q1")
             .unwrap();
         instance
-            .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut store, func_print_export)
+            .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut *store, func_print_export)
             .unwrap()
     };
 

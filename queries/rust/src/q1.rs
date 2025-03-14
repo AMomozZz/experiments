@@ -3,8 +3,7 @@ use std::{process::exit, sync::{Arc, Mutex}};
 
 use runtime::prelude::{stream::operator, *};
 use wasmtime::{component::{Instance, Linker, TypedFunc}, AsContextMut, Engine, Store, StoreContextMut};
-// use crate::{data::Bid, Host, StoreWrapper};
-use crate::{data::Bid, Host};
+use crate::{data::Bid, Host, StoreWrapper};
 use wasmtime_wasi::{WasiCtx, WasiImpl};
 
 #[data]
@@ -29,7 +28,7 @@ pub fn run_opt(bids: Stream<Bid>, ctx: &mut Context) {
     .drain(ctx);
 }
 // 26784, 28243, 27930, 35737, 37400, 43479
-pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, func_typed: TypedFunc<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>, store_wrapper: Store<>) {
+pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, func_typed: TypedFunc<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>, store_wrapper: StoreWrapper) {
     bids.map(ctx, move |bid| {
         let ((auction, price, bidder, date_time),) =
             func_typed.call(&mut *store_wrapper.0.borrow_mut(), (bid.auction, bid.price, bid.bidder, bid.date_time))
