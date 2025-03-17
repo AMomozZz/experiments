@@ -13,10 +13,6 @@ pub mod qw;
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::BufRead;
-use std::process::exit;
-use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
@@ -26,7 +22,7 @@ use crate::data::Auction;
 use crate::data::Bid;
 use crate::data::Person;
 use wasmtime::{component::{Component, Linker, ResourceTable}, Config, Engine, Store};
-use wasmtime_wasi::{Pollable, bindings::sockets::tcp_create_socket::TcpSocket, WasiImpl};
+use wasmtime_wasi::WasiImpl;
 
 const USAGE: &str = "Usage: cargo run <data-dir> <query-id>";
 
@@ -85,7 +81,7 @@ fn main() {
     let auctions = std::fs::File::open(&format!("{dir}/auctions.csv")).map(iter::<Auction>);
     let persons = std::fs::File::open(&format!("{dir}/persons.csv")).map(iter::<Person>);
 
-    let mut config = Config::new();
+    let config = Config::new();
     // config.async_support(true);
     let engine = Engine::new(&config).unwrap();
     let host = Host::new();
