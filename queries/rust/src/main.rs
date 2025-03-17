@@ -13,6 +13,7 @@ pub mod qw;
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::BufRead;
+use std::process::exit;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -63,10 +64,10 @@ impl Host {
     }
 }
 
-pub struct StoreWrapper(RefCell<Store<WasiImpl<Host>>>);
+// pub struct StoreWrapper(RefCell<Store<WasiImpl<Host>>>);
 
-unsafe impl Send for StoreWrapper {}
-unsafe impl Sync for StoreWrapper {}
+// unsafe impl Send for StoreWrapper {}
+// unsafe impl Sync for StoreWrapper {}
 
 
 fn main() {
@@ -90,13 +91,14 @@ fn main() {
     let host = Host::new();
 
     let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
-    let store_wrapper = StoreWrapper(RefCell::new(Store::new(&engine, wi)));
-    let func_print_typed = {
-        let mut store = store_wrapper.0.borrow_mut();
-        let mut linker = Linker::new(&engine);
-        let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
-        wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
+    let store_wrapper = RefCell::new(Store::new(&engine, wi));
 
+    let mut linker = Linker::new(&engine);
+    let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
+    wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
+
+    let func_print_typed = {
+        let mut store = store_wrapper.borrow_mut();
         let instance = linker.instantiate(&mut *store, &component).unwrap();
         let intf_export = instance
             .get_export(&mut *store, None, "pkg:component/nexmark")
@@ -115,7 +117,6 @@ fn main() {
         eprintln!("{}", time.elapsed().as_millis());
     }
 
-    // let store_wrapper = Arc::new(store);
     match query.as_str() {
         // Un-optimised
         "q1" => timed(move |ctx| q1::run(stream(ctx, bids), ctx)),
@@ -138,7 +139,7 @@ fn main() {
             let size = size.parse().unwrap();
             let step = step.parse().unwrap();
             timed(move |ctx| qw::run(stream(ctx, bids), size, step, ctx))
-        }
+        },
         // Optimised
         "q1-opt" => timed(move |ctx| q1::run_opt(stream(ctx, bids), ctx)),
         "q2-opt" => timed(move |ctx| q2::run_opt(stream(ctx, bids), ctx)),
@@ -152,10 +153,10 @@ fn main() {
             let size = args.next().unwrap().parse().unwrap();
             let step = args.next().unwrap().parse().unwrap();
             timed(move |ctx| qw::run_opt(stream(ctx, bids), size, step, ctx))
-        }
+        },
         // wasm
-        // "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, instance, arc_store)),
         "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, func_print_typed, store_wrapper)),
+        // "q2-wasm" => timed(move |ctx| q2::run_wasm(stream(ctx, bids), ctx)),
         // io
         "io" => {
             timed(move |ctx| {
@@ -169,7 +170,7 @@ fn main() {
                     stream(ctx, auctions).drain(ctx);
                 }
             });
-        }
+        },
         _ => panic!("unknown query"),
     }
 }

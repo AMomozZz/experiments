@@ -3,6 +3,9 @@ package pkg:component;
 interface nexmark {
     // convert-currency
     q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
+
+    // filter
+    q2: func(auction: u64, price: u64, filters: list<u64>) -> option<tuple<u64, u64>>;
 }
 
 world component {

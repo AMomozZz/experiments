@@ -35,6 +35,35 @@ pub mod exports {
                     *ptr1.add(24).cast::<i64>() = _rt::as_i64(t2_3);
                     ptr1
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_q2_cabi<T: Guest>(
+                    arg0: i64,
+                    arg1: i64,
+                    arg2: *mut u8,
+                    arg3: usize,
+                ) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg3;
+                    let result1 = T::q2(
+                        arg0 as u64,
+                        arg1 as u64,
+                        _rt::Vec::from_raw_parts(arg2.cast(), len0, len0),
+                    );
+                    let ptr2 = _RET_AREA.0.as_mut_ptr().cast::<u8>();
+                    match result1 {
+                        Some(e) => {
+                            *ptr2.add(0).cast::<u8>() = (1i32) as u8;
+                            let (t3_0, t3_1) = e;
+                            *ptr2.add(8).cast::<i64>() = _rt::as_i64(t3_0);
+                            *ptr2.add(16).cast::<i64>() = _rt::as_i64(t3_1);
+                        }
+                        None => {
+                            *ptr2.add(0).cast::<u8>() = (0i32) as u8;
+                        }
+                    };
+                    ptr2
+                }
                 pub trait Guest {
                     /// convert-currency
                     fn q1(
@@ -43,6 +72,12 @@ pub mod exports {
                         bidder: u64,
                         date_time: u64,
                     ) -> (u64, u64, u64, u64);
+                    /// filter
+                    fn q2(
+                        auction: u64,
+                        price: u64,
+                        filters: _rt::Vec<u64>,
+                    ) -> Option<(u64, u64)>;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -50,7 +85,11 @@ pub mod exports {
                         const _ : () = { #[export_name = "pkg:component/nexmark#q1"]
                         unsafe extern "C" fn export_q1(arg0 : i64, arg1 : i64, arg2 :
                         i64, arg3 : i64,) -> * mut u8 { $($path_to_types)*::
-                        _export_q1_cabi::<$ty > (arg0, arg1, arg2, arg3) } };
+                        _export_q1_cabi::<$ty > (arg0, arg1, arg2, arg3) } #[export_name
+                        = "pkg:component/nexmark#q2"] unsafe extern "C" fn export_q2(arg0
+                        : i64, arg1 : i64, arg2 : * mut u8, arg3 : usize,) -> * mut u8 {
+                        $($path_to_types)*:: _export_q2_cabi::<$ty > (arg0, arg1, arg2,
+                        arg3) } };
                     };
                 }
                 #[doc(hidden)]
@@ -93,6 +132,8 @@ mod _rt {
             self as i64
         }
     }
+    pub use alloc_crate::vec::Vec;
+    extern crate alloc as alloc_crate;
 }
 /// Generates `#[no_mangle]` functions to export the specified type as the
 /// root implementation of all generated traits.
@@ -127,12 +168,14 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 244] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07u\x01A\x02\x01A\x02\x01\
-B\x03\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-timew\0\0\x04\
-\0\x02q1\x01\x01\x04\0\x15pkg:component/nexmark\x05\0\x04\0\x17pkg:component/com\
-ponent\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09producers\x01\x0cprocessed\
--by\x02\x0dwit-component\x070.220.1\x10wit-bindgen-rust\x060.36.0";
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 293] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xa5\x01\x01A\x02\x01\
+A\x02\x01B\x08\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-ti\
+mew\0\0\x04\0\x02q1\x01\x01\x01pw\x01o\x02ww\x01k\x03\x01@\x03\x07auctionw\x05pr\
+icew\x07filters\x02\0\x04\x04\0\x02q2\x01\x05\x04\0\x15pkg:component/nexmark\x05\
+\0\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09\
+producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10wit-bindgen-rus\
+t\x060.36.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {
