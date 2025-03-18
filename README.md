@@ -19,17 +19,19 @@ Or
 
 ```bash
 cd root/
-cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --dir nexmark-data/q1
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --dir nexmark-data/bid
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --auctions --persons --dir nexmark-data/auctionPerson
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --auctions --bids --dir nexmark-data/auctionBid
 ```
 
 ```bash
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/q1 io
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid io
 ```
 
 and
 
 ```bash
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/q1 q1
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-wasm
 ```
 
 ## Output
