@@ -65,6 +65,19 @@ impl Host {
 // unsafe impl Send for StoreWrapper {}
 // unsafe impl Sync for StoreWrapper {}
 
+fn get_func_from_component<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &RefCell<Store<WasiImpl<Host>>>, name: &str) -> wasmtime::component::TypedFunc<I, O> {
+    let mut store = store_wrapper.borrow_mut();
+    let instance = linker.instantiate(&mut *store, component).unwrap();
+    let intf_export = instance
+        .get_export(&mut *store, None, "pkg:component/nexmark")
+        .unwrap();
+    let func_export = instance
+        .get_export(&mut *store, Some(&intf_export), name)
+        .unwrap();
+    instance
+        .get_typed_func::<I, O>(&mut *store, func_export)
+        .unwrap()
+}
 
 fn main() {
     let mut args = std::env::args().skip(1);
@@ -89,23 +102,13 @@ fn main() {
     let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
     let store_wrapper = RefCell::new(Store::new(&engine, wi));
 
-    let mut linker = Linker::new(&engine);
+    let mut linker= Linker::new(&engine);
     let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
     wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-    let func_print_typed = {
-        let mut store = store_wrapper.borrow_mut();
-        let instance = linker.instantiate(&mut *store, &component).unwrap();
-        let intf_export = instance
-            .get_export(&mut *store, None, "pkg:component/nexmark")
-            .unwrap();
-        let func_print_export = instance
-            .get_export(&mut *store, Some(&intf_export), "q1")
-            .unwrap();
-        instance
-            .get_typed_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&mut *store, func_print_export)
-            .unwrap()
-    };
+    let func_q1_typed = get_func_from_component::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&linker, &component, &store_wrapper, "q1");
+    let func_q2_typed = get_func_from_component::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>(&linker, &component, &store_wrapper, "q2");
+    // let func_q3_typed = get_func_from_component(linker, &component, store_wrapper, "q3");
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
         let time = std::time::Instant::now();
@@ -151,8 +154,8 @@ fn main() {
             timed(move |ctx| qw::run_opt(stream(ctx, bids), size, step, ctx))
         },
         // wasm
-        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, func_print_typed, store_wrapper)),
-        // "q2-wasm" => timed(move |ctx| q2::run_wasm(stream(ctx, bids), ctx)),
+        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, func_q1_typed, store_wrapper)),
+        "q2-wasm" => timed(move |ctx| q2::run_wasm(stream(ctx, bids), ctx, func_q2_typed, store_wrapper)),
         // io
         "io" => {
             timed(move |ctx| {
