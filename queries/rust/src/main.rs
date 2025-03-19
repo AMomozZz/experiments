@@ -108,6 +108,9 @@ fn main() {
 
     let func_q1_typed = get_func_from_component::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&linker, &component, &store_wrapper, "q1");
     let func_q2_typed = get_func_from_component::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>(&linker, &component, &store_wrapper, "q2");
+    let func_single_filter_typed = get_func_from_component::<(u64, Vec<u64>, ), (bool,)>(&linker, &component, &store_wrapper, "single-filter");
+    let func_multi_filter_typed = get_func_from_component::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter");
+    let func_multi_filter_opt_typed = get_func_from_component::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter-opt");
     // let func_q3_typed = get_func_from_component(linker, &component, store_wrapper, "q3");
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
@@ -156,6 +159,10 @@ fn main() {
         // wasm
         "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, func_q1_typed, store_wrapper)),
         "q2-wasm" => timed(move |ctx| q2::run_wasm(stream(ctx, bids), ctx, func_q2_typed, store_wrapper)),
+        "q2-wasm-sf" => timed(move |ctx| q2::run_wasm_sf(stream(ctx, bids), ctx, func_single_filter_typed, store_wrapper)),
+        "q2-wasm-mf" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, func_multi_filter_typed, store_wrapper)),
+        "q2-wasm-mf-opt" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, func_multi_filter_opt_typed, store_wrapper)),
+
         // io
         "io" => {
             timed(move |ctx| {
