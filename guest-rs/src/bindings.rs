@@ -138,6 +138,41 @@ pub mod exports {
                         false => 0,
                     }
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_string_single_filter_cabi<T: Guest>(
+                    arg0: *mut u8,
+                    arg1: usize,
+                    arg2: *mut u8,
+                    arg3: usize,
+                ) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg1;
+                    let bytes0 = _rt::Vec::from_raw_parts(arg0.cast(), len0, len0);
+                    let base4 = arg2;
+                    let len4 = arg3;
+                    let mut result4 = _rt::Vec::with_capacity(len4);
+                    for i in 0..len4 {
+                        let base = base4.add(i * 8);
+                        let e4 = {
+                            let l1 = *base.add(0).cast::<*mut u8>();
+                            let l2 = *base.add(4).cast::<usize>();
+                            let len3 = l2;
+                            let bytes3 = _rt::Vec::from_raw_parts(l1.cast(), len3, len3);
+                            _rt::string_lift(bytes3)
+                        };
+                        result4.push(e4);
+                    }
+                    _rt::cabi_dealloc(base4, len4 * 8, 4);
+                    let result5 = T::string_single_filter(
+                        _rt::string_lift(bytes0),
+                        result4,
+                    );
+                    match result5 {
+                        true => 1,
+                        false => 0,
+                    }
+                }
                 pub trait Guest {
                     /// convert-currency
                     fn q1(
@@ -153,11 +188,16 @@ pub mod exports {
                         filters: _rt::Vec<u64>,
                     ) -> Option<(u64, u64)>;
                     /// single-filter
-                    fn single_filter(p: u64, filter: _rt::Vec<u64>) -> bool;
+                    fn single_filter(p: u64, filters: _rt::Vec<u64>) -> bool;
                     /// multi-filter
                     fn multi_filter(v: _rt::Vec<(u64, _rt::Vec<u64>)>) -> bool;
                     /// multi-filter-opt
                     fn multi_filter_opt(v: _rt::Vec<(u64, _rt::Vec<u64>)>) -> bool;
+                    /// string-single-filter
+                    fn string_single_filter(
+                        p: _rt::String,
+                        filters: _rt::Vec<_rt::String>,
+                    ) -> bool;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -180,7 +220,12 @@ pub mod exports {
                         "pkg:component/nexmark#multi-filter-opt"] unsafe extern "C" fn
                         export_multi_filter_opt(arg0 : * mut u8, arg1 : usize,) -> i32 {
                         $($path_to_types)*:: _export_multi_filter_opt_cabi::<$ty > (arg0,
-                        arg1) } };
+                        arg1) } #[export_name =
+                        "pkg:component/nexmark#string-single-filter"] unsafe extern "C"
+                        fn export_string_single_filter(arg0 : * mut u8, arg1 : usize,
+                        arg2 : * mut u8, arg3 : usize,) -> i32 { $($path_to_types)*::
+                        _export_string_single_filter_cabi::<$ty > (arg0, arg1, arg2,
+                        arg3) } };
                     };
                 }
                 #[doc(hidden)]
@@ -231,6 +276,14 @@ mod _rt {
         let layout = alloc::Layout::from_size_align_unchecked(size, align);
         alloc::dealloc(ptr, layout);
     }
+    pub unsafe fn string_lift(bytes: Vec<u8>) -> String {
+        if cfg!(debug_assertions) {
+            String::from_utf8(bytes).unwrap()
+        } else {
+            String::from_utf8_unchecked(bytes)
+        }
+    }
+    pub use alloc_crate::string::String;
     extern crate alloc as alloc_crate;
     pub use alloc_crate::alloc;
 }
@@ -267,13 +320,14 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 381] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xfd\x01\x01A\x02\x01\
-A\x02\x01B\x0f\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-ti\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 427] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xab\x02\x01A\x02\x01\
+A\x02\x01B\x12\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-ti\
 mew\0\0\x04\0\x02q1\x01\x01\x01pw\x01o\x02ww\x01k\x03\x01@\x03\x07auctionw\x05pr\
-icew\x07filters\x02\0\x04\x04\0\x02q2\x01\x05\x01@\x02\x01pw\x06filter\x02\0\x7f\
+icew\x07filters\x02\0\x04\x04\0\x02q2\x01\x05\x01@\x02\x01pw\x07filters\x02\0\x7f\
 \x04\0\x0dsingle-filter\x01\x06\x01o\x02w\x02\x01p\x07\x01@\x01\x01v\x08\0\x7f\x04\
-\0\x0cmulti-filter\x01\x09\x04\0\x10multi-filter-opt\x01\x09\x04\0\x15pkg:compon\
+\0\x0cmulti-filter\x01\x09\x04\0\x10multi-filter-opt\x01\x09\x01ps\x01@\x02\x01p\
+s\x07filters\x0a\0\x7f\x04\0\x14string-single-filter\x01\x0b\x04\0\x15pkg:compon\
 ent/nexmark\x05\0\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\0\x09compon\
 ent\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10\
 wit-bindgen-rust\x060.36.0";

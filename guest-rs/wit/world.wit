@@ -8,13 +8,16 @@ interface nexmark {
     q2: func(auction: u64, price: u64, filters: list<u64>) -> option<tuple<u64, u64>>;
 
     // single-filter
-    single-filter: func(p: u64, filter: list<u64>) -> bool;
+    single-filter: func(p: u64, filters: list<u64>) -> bool;
     
     // multi-filter
     multi-filter: func(v: list<tuple<u64, list<u64>>>) -> bool;
 
     // multi-filter-opt
     multi-filter-opt: func(v: list<tuple<u64, list<u64>>>) -> bool;
+
+    // string-single-filter
+    string-single-filter: func(p: string, filters: list<string>) -> bool;
 }
 
 world component {

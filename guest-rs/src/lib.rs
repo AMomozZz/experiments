@@ -23,14 +23,14 @@ impl NexmarkGuest for Component {
     }
 
     #[doc = " single-filter"]
-    fn single_filter(p:u64, filter:Vec<u64>,) -> bool {
-        filter.contains(&p)
+    fn single_filter(p:u64, filters:Vec<u64>,) -> bool {
+        filters.contains(&p)
     }
 
     #[doc = " multi-filter"]
     fn multi_filter(v:Vec<(u64, Vec<u64>)>,) -> bool {
-        for (p, filter) in v {
-            match filter.contains(&p) {
+        for (p, filters) in v {
+            match filters.contains(&p) {
                 true => continue,
                 false => return false,
             }
@@ -40,7 +40,12 @@ impl NexmarkGuest for Component {
 
     #[doc = " multi-filter-opt"]
     fn multi_filter_opt(v:Vec<(u64, Vec<u64>)>,) -> bool {
-        v.into_iter().all(|(p, filter)| filter.contains(&p))
+        v.into_iter().all(|(p, filters)| filters.contains(&p))
+    }
+
+    #[doc = " string-single-filter"]
+    fn string_single_filter(p: String, filters: Vec<String>) -> bool {
+        filters.contains(&p)
     }
 }
 
