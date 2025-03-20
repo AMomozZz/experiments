@@ -13,10 +13,12 @@ pub mod qw;
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::BufRead;
+use std::rc::Rc;
 
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
+use wasmtime::component::TypedFunc;
 
 use crate::data::Auction;
 use crate::data::Bid;
@@ -60,12 +62,36 @@ impl Host {
     }
 }
 
-// pub struct StoreWrapper(RefCell<Store<WasiImpl<Host>>>);
+#[derive(Clone, Send, Sync)]
+pub struct WasmFunction<I, O> {
+    store: Rc<RefCell<Store<WasiImpl<Host>>>>,
+    func: TypedFunc<I, O>
+}
 
-// unsafe impl Send for StoreWrapper {}
-// unsafe impl Sync for StoreWrapper {}
+impl<I, O> WasmFunction<I, O> 
+where 
+    I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList,
+    O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList
+{
+    fn new(func: TypedFunc<I, O>, store_wrapper: Rc<RefCell<Store<WasiImpl<Host>>>>) -> Self {
+        WasmFunction {
+            store: store_wrapper,
+            func
+        }
+    }
+    fn call(&self, input: I) -> O {
+        let result = self.func.call(&mut *self.store.borrow_mut(), input).unwrap();
+        self.func.post_return(&mut *self.store.borrow_mut()).unwrap();
+        result
+    }
+}
 
-fn get_func_from_component<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &RefCell<Store<WasiImpl<Host>>>, name: &str) -> wasmtime::component::TypedFunc<I, O> {
+fn get_wasm_func<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, name: &str) -> WasmFunction<I, O> {
+    let clone_store_wrapper = store_wrapper.clone();
+    WasmFunction::<I, O>::new(get_func_from_component(linker, component, &clone_store_wrapper, name), clone_store_wrapper)
+}
+
+fn get_func_from_component<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, name: &str) -> wasmtime::component::TypedFunc<I, O> {
     let mut store = store_wrapper.borrow_mut();
     let instance = linker.instantiate(&mut *store, component).unwrap();
     let intf_export = instance
@@ -100,19 +126,19 @@ fn main() {
     let host = Host::new();
 
     let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
-    let store_wrapper = RefCell::new(Store::new(&engine, wi));
+    let store_wrapper = Rc::new(RefCell::new(Store::new(&engine, wi)));
 
     let mut linker= Linker::new(&engine);
     let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
     wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-    let func_q1_typed = get_func_from_component::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&linker, &component, &store_wrapper, "q1");
-    let func_q2_typed = get_func_from_component::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>(&linker, &component, &store_wrapper, "q2");
-    let func_single_filter_typed = get_func_from_component::<(u64, Vec<u64>, ), (bool,)>(&linker, &component, &store_wrapper, "single-filter");
-    let func_multi_filter_typed = get_func_from_component::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter");
-    let func_multi_filter_opt_typed = get_func_from_component::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter-opt");
-    let func_string_sf_typed = get_func_from_component::<(String, Vec<String>, ), (bool,)>(&linker, &component, &store_wrapper, "string-single-filter");
-    // let func_q3_typed = get_func_from_component(linker, &component, store_wrapper, "q3");
+    let wasm_func_q1 = get_wasm_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&linker, &component, &store_wrapper, "q1");
+    let wasm_func_q2 = get_wasm_func::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>(&linker, &component, &store_wrapper, "q2");
+    let wasm_func_single_filter = get_wasm_func::<(u64, Vec<u64>, ), (bool,)>(&linker, &component, &store_wrapper, "single-filter");
+    let wasm_func_multi_filter = get_wasm_func::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter");
+    let wasm_func_multi_filter_opt = get_wasm_func::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter-opt");
+    let wasm_func_string_sf = get_wasm_func::<(String, Vec<String>, ), (bool,)>(&linker, &component, &store_wrapper, "string-single-filter");
+    // let wasm_func_q3 = get_func_from_component(linker, &component, store_wrapper, "q3");
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
         let time = std::time::Instant::now();
@@ -158,12 +184,12 @@ fn main() {
             timed(move |ctx| qw::run_opt(stream(ctx, bids), size, step, ctx))
         },
         // wasm
-        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, func_q1_typed, store_wrapper)),
-        "q2-wasm" => timed(move |ctx| q2::run_wasm(stream(ctx, bids), ctx, func_q2_typed, store_wrapper)),
-        "q2-wasm-sf" => timed(move |ctx| q2::run_wasm_sf(stream(ctx, bids), ctx, func_single_filter_typed, store_wrapper)),
-        "q2-wasm-mf" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, func_multi_filter_typed, store_wrapper)),
-        "q2-wasm-mf-opt" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, func_multi_filter_opt_typed, store_wrapper)),
-        "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, func_string_sf_typed, func_single_filter_typed, store_wrapper)),
+        "q1-wasm" => timed(move |ctx| q1::run_wasm(stream(ctx, bids), ctx, wasm_func_q1)),
+        "q2-wasm" => timed(move |ctx| q2::run_wasm(stream(ctx, bids), ctx, wasm_func_q2)),
+        "q2-wasm-sf" => timed(move |ctx| q2::run_wasm_sf(stream(ctx, bids), ctx, wasm_func_single_filter)),
+        "q2-wasm-mf" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter)),
+        "q2-wasm-mf-opt" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter_opt)),
+        // "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, func_string_sf_typed, func_single_filter_typed, store_wrapper)),
 
         // io
         "io" => {

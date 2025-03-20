@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use runtime::prelude::*;
 use wasmtime::{component::TypedFunc, Store};
-use crate::{data::Bid, Host};
+use crate::{data::Bid, Host, WasmFunction};
 use wasmtime_wasi::WasiImpl;
 
 #[data]
@@ -26,13 +26,9 @@ pub fn run_opt(bids: Stream<Bid>, ctx: &mut Context) {
     .drain(ctx);
 }
 
-pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, func_typed: TypedFunc<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>, store_wrapper: RefCell<Store<WasiImpl<Host>>>) {
+pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>) {
     bids.map(ctx, move |bid| {
-        let mut store = store_wrapper.borrow_mut();
-        let ((auction, price, bidder, date_time),) =
-            func_typed.call(&mut *store, (bid.auction, bid.price, bid.bidder, bid.date_time))
-            .unwrap();
-        func_typed.post_return(&mut *store).unwrap();
+        let ((auction, price, bidder, date_time),) = wasm_func.call((bid.auction, bid.price, bid.bidder, bid.date_time));
         Output::new(auction, price, bidder, date_time)
     })
     .drain(ctx);
