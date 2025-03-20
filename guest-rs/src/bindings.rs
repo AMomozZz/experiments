@@ -173,6 +173,35 @@ pub mod exports {
                         false => 0,
                     }
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_less_or_equal_single_cabi<T: Guest>(
+                    arg0: i64,
+                    arg1: i64,
+                ) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let result0 = T::less_or_equal_single(arg0 as u64, arg1 as u64);
+                    match result0 {
+                        true => 1,
+                        false => 0,
+                    }
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_less_or_equal_multi_cabi<T: Guest>(
+                    arg0: *mut u8,
+                    arg1: usize,
+                ) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg1;
+                    let result1 = T::less_or_equal_multi(
+                        _rt::Vec::from_raw_parts(arg0.cast(), len0, len0),
+                    );
+                    match result1 {
+                        true => 1,
+                        false => 0,
+                    }
+                }
                 pub trait Guest {
                     /// convert-currency
                     fn q1(
@@ -198,6 +227,10 @@ pub mod exports {
                         p: _rt::String,
                         filters: _rt::Vec<_rt::String>,
                     ) -> bool;
+                    /// single-less-or-equal
+                    fn less_or_equal_single(a: u64, b: u64) -> bool;
+                    /// multi-less-or-equal
+                    fn less_or_equal_multi(v: _rt::Vec<(u64, u64)>) -> bool;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -225,7 +258,15 @@ pub mod exports {
                         fn export_string_single_filter(arg0 : * mut u8, arg1 : usize,
                         arg2 : * mut u8, arg3 : usize,) -> i32 { $($path_to_types)*::
                         _export_string_single_filter_cabi::<$ty > (arg0, arg1, arg2,
-                        arg3) } };
+                        arg3) } #[export_name =
+                        "pkg:component/nexmark#less-or-equal-single"] unsafe extern "C"
+                        fn export_less_or_equal_single(arg0 : i64, arg1 : i64,) -> i32 {
+                        $($path_to_types)*:: _export_less_or_equal_single_cabi::<$ty >
+                        (arg0, arg1) } #[export_name =
+                        "pkg:component/nexmark#less-or-equal-multi"] unsafe extern "C" fn
+                        export_less_or_equal_multi(arg0 : * mut u8, arg1 : usize,) -> i32
+                        { $($path_to_types)*:: _export_less_or_equal_multi_cabi::<$ty >
+                        (arg0, arg1) } };
                     };
                 }
                 #[doc(hidden)]
@@ -320,17 +361,19 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 427] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xab\x02\x01A\x02\x01\
-A\x02\x01B\x12\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-ti\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 498] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xf2\x02\x01A\x02\x01\
+A\x02\x01B\x17\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-ti\
 mew\0\0\x04\0\x02q1\x01\x01\x01pw\x01o\x02ww\x01k\x03\x01@\x03\x07auctionw\x05pr\
 icew\x07filters\x02\0\x04\x04\0\x02q2\x01\x05\x01@\x02\x01pw\x07filters\x02\0\x7f\
 \x04\0\x0dsingle-filter\x01\x06\x01o\x02w\x02\x01p\x07\x01@\x01\x01v\x08\0\x7f\x04\
 \0\x0cmulti-filter\x01\x09\x04\0\x10multi-filter-opt\x01\x09\x01ps\x01@\x02\x01p\
-s\x07filters\x0a\0\x7f\x04\0\x14string-single-filter\x01\x0b\x04\0\x15pkg:compon\
-ent/nexmark\x05\0\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\0\x09compon\
-ent\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10\
-wit-bindgen-rust\x060.36.0";
+s\x07filters\x0a\0\x7f\x04\0\x14string-single-filter\x01\x0b\x01@\x02\x01aw\x01b\
+w\0\x7f\x04\0\x14less-or-equal-single\x01\x0c\x01p\x03\x01@\x01\x01v\x0d\0\x7f\x04\
+\0\x13less-or-equal-multi\x01\x0e\x04\0\x15pkg:component/nexmark\x05\0\x04\0\x17\
+pkg:component/component\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09producers\
+\x01\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10wit-bindgen-rust\x060.36\
+.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

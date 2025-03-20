@@ -1,23 +1,32 @@
 package pkg:component;
 
 interface nexmark {
-    // convert-currency
+    resource pruned-bid{
+        constructor()
+    }
+    //convert-currency
     q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
 
-    // filter
+    //filter
     q2: func(auction: u64, price: u64, filters: list<u64>) -> option<tuple<u64, u64>>;
 
-    // single-filter
+    //single-filter
     single-filter: func(p: u64, filters: list<u64>) -> bool;
     
-    // multi-filter
+    //multi-filter
     multi-filter: func(v: list<tuple<u64, list<u64>>>) -> bool;
 
-    // multi-filter-opt
+    //multi-filter-opt
     multi-filter-opt: func(v: list<tuple<u64, list<u64>>>) -> bool;
 
-    // string-single-filter
+    //string-single-filter
     string-single-filter: func(p: string, filters: list<string>) -> bool;
+
+    //single-less-or-equal
+    less-or-equal-single: func(a: u64, b: u64) -> bool;
+
+    //multi-less-or-equal
+    less-or-equal-multi: func(v: list<tuple<u64, u64>>) -> bool;
 }
 
 world component {

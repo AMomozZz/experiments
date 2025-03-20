@@ -1,7 +1,10 @@
+use std::vec;
+
 use runtime::prelude::*;
 
 use crate::data::Auction;
 use crate::data::Bid;
+use crate::WasmFunction;
 
 #[data]
 struct Output {
@@ -72,6 +75,72 @@ pub fn run_opt(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context) 
         )
         .filter(ctx, |(a, b)| {
             a.date_time <= b.date_time && b.date_time <= a.expires
+        })
+        .keyby(ctx, |(a, _)| (a.id, a.category))
+        .time_tumbling_holistic_window(ctx, SIZE, |(_, category), items, _| {
+            let max = items.iter().map(|(_, b)| b.price).max().unwrap();
+            (*category, max)
+        })
+        .keyby(ctx, |(_, category)| *category)
+        .time_tumbling_holistic_window(ctx, SIZE, |category, items, _| {
+            let sum = items.iter().map(|(_, max)| max).sum::<u64>();
+            let count = items.len() as u64;
+            Output::new(*category, sum / count)
+        })
+        .drain(ctx);
+}
+
+
+// Wasm
+pub fn run_wasm_s(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context, wasm_func1: WasmFunction<(u64, u64), (bool,)>) {
+    let auctions = auctions.map(ctx, |a| {
+        PrunedAuction::new(a.id, a.category, a.expires, a.date_time)
+    });
+    let bids = bids.map(ctx, |b| PrunedBid::new(b.auction, b.price, b.date_time));
+
+    auctions
+        .tumbling_window_join(
+            ctx,
+            bids,
+            |auction| auction.id,
+            |bid| bid.auction,
+            SIZE,
+            |auction, bid| (auction.clone(), bid.clone()),
+        )
+        .filter(ctx, move |(a, b)| {
+            wasm_func1.call((a.date_time, b.date_time)).0 && wasm_func1.call((b.date_time, a.expires)).0
+        })
+        .keyby(ctx, |(a, _)| (a.id, a.category))
+        .time_tumbling_holistic_window(ctx, SIZE, |(_, category), items, _| {
+            let max = items.iter().map(|(_, b)| b.price).max().unwrap();
+            (*category, max)
+        })
+        .keyby(ctx, |(_, category)| *category)
+        .time_tumbling_holistic_window(ctx, SIZE, |category, items, _| {
+            let sum = items.iter().map(|(_, max)| max).sum::<u64>();
+            let count = items.len() as u64;
+            Output::new(*category, sum / count)
+        })
+        .drain(ctx);
+}
+
+pub fn run_wasm_m(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context, wasm_func1: WasmFunction<(Vec<(u64, u64)>,), (bool,)>) {
+    let auctions = auctions.map(ctx, |a| {
+        PrunedAuction::new(a.id, a.category, a.expires, a.date_time)
+    });
+    let bids = bids.map(ctx, |b| PrunedBid::new(b.auction, b.price, b.date_time));
+
+    auctions
+        .tumbling_window_join(
+            ctx,
+            bids,
+            |auction| auction.id,
+            |bid| bid.auction,
+            SIZE,
+            |auction, bid| (auction.clone(), bid.clone()),
+        )
+        .filter(ctx, move |(a, b)| {
+            wasm_func1.call((vec![(a.date_time, b.date_time), (b.date_time, a.expires)], )).0
         })
         .keyby(ctx, |(a, _)| (a.id, a.category))
         .time_tumbling_holistic_window(ctx, SIZE, |(_, category), items, _| {
