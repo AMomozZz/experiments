@@ -189,7 +189,7 @@ fn main() {
         "q2-wasm-sf" => timed(move |ctx| q2::run_wasm_sf(stream(ctx, bids), ctx, wasm_func_single_filter)),
         "q2-wasm-mf" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter)),
         "q2-wasm-mf-opt" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter_opt)),
-        // "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, func_string_sf_typed, func_single_filter_typed, store_wrapper)),
+        "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, wasm_func_string_sf, wasm_func_single_filter)),
 
         // io
         "io" => {
