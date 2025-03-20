@@ -1,8 +1,5 @@
 use runtime::prelude::*;
-use wasmtime::{component::TypedFunc, Store};
-use crate::{data::Bid, Host, WasmFunction};
-use wasmtime_wasi::WasiImpl;
-use std::cell::RefCell;
+use crate::{data::Bid, WasmFunction};
 
 #[data]
 struct Output {
