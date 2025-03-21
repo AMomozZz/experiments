@@ -1,10 +1,48 @@
 package pkg:component;
 
-interface nexmark {
-    resource pruned-bid{
-        constructor()
+interface data-type {
+    record auction {
+        id: u64,
+        item-name: string,
+        description: string,
+        initial-bid: u64,
+        reserve: u64,
+
+        date-time: u64,
+        expires: u64,
+        seller: u64,
+        category: u64,
+        extra: string,
     }
+
+    record bid {
+        auction: u64,
+        bidder: u64,
+        price: u64,
+        channel: string,
+        url: string,
+        
+        date-time: u64,
+        extra: string,
+    }
+
+    record person {
+        id: u64,
+        name: string,
+        email-address: string,
+        credit-card: string,
+        city: string,
+        state: string,
+        
+        date-time: u64,
+        extra: string,
+    }
+}
+
+interface nexmark {
+    use data-type.{bid, auction};
     //convert-currency
+    // q1: func(bid: bid) -> bid;
     q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
 
     //filter
@@ -27,8 +65,12 @@ interface nexmark {
 
     //multi-less-or-equal
     less-or-equal-multi: func(v: list<tuple<u64, u64>>) -> bool;
+
+    //q4-max-of-bid-price
+    q4-max-of-bid-price: func(v: list<tuple<auction, bid>>) -> u64;
 }
 
 world component {
+    import data-type;
     export nexmark;
 }

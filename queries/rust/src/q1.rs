@@ -30,3 +30,11 @@ pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(u
     })
     .drain(ctx);
 }
+
+// pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(Bid,), (Bid,)>) {
+//     bids.map(ctx, move |bid| {
+//         let (bid,) = wasm_func.call((bid,));
+//         Output::new(bid.auction, bid.price, bid.bidder, bid.date_time)
+//     })
+//     .drain(ctx);
+// }
