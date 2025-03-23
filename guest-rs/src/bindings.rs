@@ -70,6 +70,52 @@ pub mod pkg {
                 }
             }
         }
+        #[allow(dead_code, clippy::all)]
+        pub mod q4_records {
+            #[used]
+            #[doc(hidden)]
+            static __FORCE_SECTION_REF: fn() = super::super::super::__link_custom_section_describing_imports;
+            #[repr(C)]
+            #[derive(Clone, Copy)]
+            pub struct Q4Auction {
+                pub id: u64,
+                pub category: u64,
+                pub expires: u64,
+                pub date_time: u64,
+            }
+            impl ::core::fmt::Debug for Q4Auction {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("Q4Auction")
+                        .field("id", &self.id)
+                        .field("category", &self.category)
+                        .field("expires", &self.expires)
+                        .field("date-time", &self.date_time)
+                        .finish()
+                }
+            }
+            #[repr(C)]
+            #[derive(Clone, Copy)]
+            pub struct Q4Bid {
+                pub auction: u64,
+                pub price: u64,
+                pub date_time: u64,
+            }
+            impl ::core::fmt::Debug for Q4Bid {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("Q4Bid")
+                        .field("auction", &self.auction)
+                        .field("price", &self.price)
+                        .field("date-time", &self.date_time)
+                        .finish()
+                }
+            }
+        }
     }
 }
 #[rustfmt::skip]
@@ -85,6 +131,8 @@ pub mod exports {
                 use super::super::super::super::_rt;
                 pub type Bid = super::super::super::super::pkg::component::data_type::Bid;
                 pub type Auction = super::super::super::super::pkg::component::data_type::Auction;
+                pub type Q4Auction = super::super::super::super::pkg::component::q4_records::Q4Auction;
+                pub type Q4Bid = super::super::super::super::pkg::component::q4_records::Q4Bid;
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_q1_cabi<T: Guest>(
@@ -369,6 +417,19 @@ pub mod exports {
                     let result30 = T::q4_max_of_bid_price(result29);
                     _rt::as_i64(result30)
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_q4_max_of_bid_price_p_cabi<T: Guest>(
+                    arg0: *mut u8,
+                    arg1: usize,
+                ) -> i64 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg1;
+                    let result1 = T::q4_max_of_bid_price_p(
+                        _rt::Vec::from_raw_parts(arg0.cast(), len0, len0),
+                    );
+                    _rt::as_i64(result1)
+                }
                 pub trait Guest {
                     /// convert-currency
                     /// q1: func(bid: bid) -> bid;
@@ -401,6 +462,8 @@ pub mod exports {
                     fn less_or_equal_multi(v: _rt::Vec<(u64, u64)>) -> bool;
                     /// q4-max-of-bid-price
                     fn q4_max_of_bid_price(v: _rt::Vec<(Auction, Bid)>) -> u64;
+                    /// q4-max-of-bid-price-pruned
+                    fn q4_max_of_bid_price_p(v: _rt::Vec<(Q4Auction, Q4Bid)>) -> u64;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -440,7 +503,11 @@ pub mod exports {
                         "pkg:component/nexmark#q4-max-of-bid-price"] unsafe extern "C" fn
                         export_q4_max_of_bid_price(arg0 : * mut u8, arg1 : usize,) -> i64
                         { $($path_to_types)*:: _export_q4_max_of_bid_price_cabi::<$ty >
-                        (arg0, arg1) } };
+                        (arg0, arg1) } #[export_name =
+                        "pkg:component/nexmark#q4-max-of-bid-price-p"] unsafe extern "C"
+                        fn export_q4_max_of_bid_price_p(arg0 : * mut u8, arg1 : usize,)
+                        -> i64 { $($path_to_types)*::
+                        _export_q4_max_of_bid_price_p_cabi::<$ty > (arg0, arg1) } };
                     };
                 }
                 #[doc(hidden)]
@@ -535,27 +602,32 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 884] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xf4\x05\x01A\x02\x01\
-A\x06\x01B\x06\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1117] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xdd\x07\x01A\x02\x01\
+A\x0a\x01B\x06\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
 reservew\x09date-timew\x07expiresw\x06sellerw\x08categoryw\x05extras\x04\0\x07au\
 ction\x03\0\0\x01r\x07\x07auctionw\x06bidderw\x05pricew\x07channels\x03urls\x09d\
 ate-timew\x05extras\x04\0\x03bid\x03\0\x02\x01r\x08\x02idw\x04names\x0demail-add\
 resss\x0bcredit-cards\x04citys\x05states\x09date-timew\x05extras\x04\0\x06person\
-\x03\0\x04\x03\0\x17pkg:component/data-type\x05\0\x02\x03\0\0\x03bid\x02\x03\0\0\
-\x07auction\x01B\x1f\x02\x03\x02\x01\x01\x04\0\x03bid\x03\0\0\x02\x03\x02\x01\x02\
-\x04\0\x07auction\x03\0\x02\x01o\x04wwww\x01@\x04\x07auctionw\x05pricew\x06bidde\
-rw\x09date-timew\0\x04\x04\0\x02q1\x01\x05\x01pw\x01o\x02ww\x01k\x07\x01@\x03\x07\
-auctionw\x05pricew\x07filters\x06\0\x08\x04\0\x02q2\x01\x09\x01@\x02\x01pw\x07fi\
-lters\x06\0\x7f\x04\0\x0dsingle-filter\x01\x0a\x01o\x02w\x06\x01p\x0b\x01@\x01\x01\
-v\x0c\0\x7f\x04\0\x0cmulti-filter\x01\x0d\x04\0\x10multi-filter-opt\x01\x0d\x01p\
-s\x01@\x02\x01ps\x07filters\x0e\0\x7f\x04\0\x14string-single-filter\x01\x0f\x01@\
-\x02\x01aw\x01bw\0\x7f\x04\0\x14less-or-equal-single\x01\x10\x01p\x07\x01@\x01\x01\
-v\x11\0\x7f\x04\0\x13less-or-equal-multi\x01\x12\x01o\x02\x03\x01\x01p\x13\x01@\x01\
-\x01v\x14\0w\x04\0\x13q4-max-of-bid-price\x01\x15\x04\0\x15pkg:component/nexmark\
-\x05\x03\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\0\x09component\x03\0\
-\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10wit-bi\
-ndgen-rust\x060.36.0";
+\x03\0\x04\x03\0\x17pkg:component/data-type\x05\0\x01B\x04\x01r\x04\x02idw\x08ca\
+tegoryw\x07expiresw\x09date-timew\x04\0\x0aq4-auction\x03\0\0\x01r\x03\x07auctio\
+nw\x05pricew\x09date-timew\x04\0\x06q4-bid\x03\0\x02\x03\0\x18pkg:component/q4-r\
+ecords\x05\x01\x02\x03\0\0\x03bid\x02\x03\0\0\x07auction\x02\x03\0\x01\x0aq4-auc\
+tion\x02\x03\0\x01\x06q4-bid\x01B'\x02\x03\x02\x01\x02\x04\0\x03bid\x03\0\0\x02\x03\
+\x02\x01\x03\x04\0\x07auction\x03\0\x02\x02\x03\x02\x01\x04\x04\0\x0aq4-auction\x03\
+\0\x04\x02\x03\x02\x01\x05\x04\0\x06q4-bid\x03\0\x06\x01o\x04wwww\x01@\x04\x07au\
+ctionw\x05pricew\x06bidderw\x09date-timew\0\x08\x04\0\x02q1\x01\x09\x01pw\x01o\x02\
+ww\x01k\x0b\x01@\x03\x07auctionw\x05pricew\x07filters\x0a\0\x0c\x04\0\x02q2\x01\x0d\
+\x01@\x02\x01pw\x07filters\x0a\0\x7f\x04\0\x0dsingle-filter\x01\x0e\x01o\x02w\x0a\
+\x01p\x0f\x01@\x01\x01v\x10\0\x7f\x04\0\x0cmulti-filter\x01\x11\x04\0\x10multi-f\
+ilter-opt\x01\x11\x01ps\x01@\x02\x01ps\x07filters\x12\0\x7f\x04\0\x14string-sing\
+le-filter\x01\x13\x01@\x02\x01aw\x01bw\0\x7f\x04\0\x14less-or-equal-single\x01\x14\
+\x01p\x0b\x01@\x01\x01v\x15\0\x7f\x04\0\x13less-or-equal-multi\x01\x16\x01o\x02\x03\
+\x01\x01p\x17\x01@\x01\x01v\x18\0w\x04\0\x13q4-max-of-bid-price\x01\x19\x01o\x02\
+\x05\x07\x01p\x1a\x01@\x01\x01v\x1b\0w\x04\0\x15q4-max-of-bid-price-p\x01\x1c\x04\
+\0\x15pkg:component/nexmark\x05\x06\x04\0\x17pkg:component/component\x04\0\x0b\x0f\
+\x01\0\x09component\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-compo\
+nent\x070.220.1\x10wit-bindgen-rust\x060.36.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

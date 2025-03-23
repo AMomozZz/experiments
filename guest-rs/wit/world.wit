@@ -39,8 +39,24 @@ interface data-type {
     }
 }
 
+interface q4-records {
+    record q4-auction {
+        id: u64,
+        category: u64,
+        expires: u64,
+        date-time: u64,
+    }
+
+    record q4-bid {
+        auction: u64,
+        price: u64,
+        date-time: u64,
+    }
+}
+
 interface nexmark {
     use data-type.{bid, auction};
+    use q4-records.{q4-auction, q4-bid};
     //convert-currency
     // q1: func(bid: bid) -> bid;
     q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
@@ -68,9 +84,13 @@ interface nexmark {
 
     //q4-max-of-bid-price
     q4-max-of-bid-price: func(v: list<tuple<auction, bid>>) -> u64;
+
+    //q4-max-of-bid-price-pruned
+    q4-max-of-bid-price-p: func(v: list<tuple<q4-auction, q4-bid>>) -> u64;
 }
 
 world component {
     import data-type;
+    import q4-records;
     export nexmark;
 }

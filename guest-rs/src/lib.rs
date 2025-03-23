@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Guest as NexmarkGuest, Bid, Auction};
+use exports::pkg::component::nexmark::{Guest as NexmarkGuest, Bid, Auction, Q4Auction, Q4Bid};
 
 struct Component;
 
@@ -63,6 +63,11 @@ impl NexmarkGuest for Component {
     
     #[doc = " q4-max-of-bid-price"]
     fn q4_max_of_bid_price(v: Vec<(Auction, Bid,)>,) -> u64 {
+        v.iter().map(|(_, b)| b.price).max().unwrap()
+    }
+
+    #[doc = "q4-max-of-bid-price-pruned"]
+    fn q4_max_of_bid_price_p(v: Vec<(Q4Auction, Q4Bid,)>,) -> u64 {
         v.iter().map(|(_, b)| b.price).max().unwrap()
     }
 }

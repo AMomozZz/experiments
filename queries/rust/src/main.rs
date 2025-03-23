@@ -23,6 +23,7 @@ use wasmtime::component::TypedFunc;
 use crate::data::Auction;
 use crate::data::Bid;
 use crate::data::Person;
+use crate::data::{Q4PrunedAuction, Q4PrunedBid};
 use wasmtime::{component::{Component, Linker, ResourceTable}, Config, Engine, Store};
 use wasmtime_wasi::WasiImpl;
 
@@ -143,6 +144,7 @@ fn main() {
     let wasm_func_less_equal_s = get_wasm_func::<(u64,u64, ), (bool,)>(&linker, &component, &store_wrapper, "less-or-equal-single");
     let wasm_func_less_equal_m = get_wasm_func::<(Vec<(u64,u64)>, ), (bool,)>(&linker, &component, &store_wrapper, "less-or-equal-multi");
     let wasm_func_q4_max_of_bid_price = get_wasm_func::<(Vec<(Auction, Bid)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-max-of-bid-price");
+    let wasm_func_q4_max_of_bid_price_p = get_wasm_func::<(Vec<(Q4PrunedAuction, Q4PrunedBid)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-max-of-bid-price-p");
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
         let time = std::time::Instant::now();
@@ -195,7 +197,7 @@ fn main() {
         "q2-wasm-mf-opt" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter_opt)),
         "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, wasm_func_string_sf, wasm_func_single_filter)),
         "q4-wasm-s" => timed(move |ctx| q4::run_wasm_s(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_s, wasm_func_q4_max_of_bid_price)),
-        "q4-wasm-m" => timed(move |ctx| q4::run_wasm_m(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m)),
+        "q4-wasm-m" => timed(move |ctx| q4::run_wasm_m(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price_p)),
 
         // io
         "io" => {

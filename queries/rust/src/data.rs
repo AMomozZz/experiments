@@ -53,3 +53,24 @@ pub struct Bid {
     pub date_time: u64,
     pub extra: String,
 }
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct Q4PrunedAuction {
+    pub id: u64,
+    pub category: u64,
+    pub expires: u64,
+    #[component(name = "date-time")]
+    pub date_time: u64,
+}
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct Q4PrunedBid {
+    pub auction: u64,
+    pub price: u64,
+    #[component(name = "date-time")]
+    pub date_time: u64,
+}
