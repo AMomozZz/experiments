@@ -70,6 +70,13 @@ impl NexmarkGuest for Component {
     fn q4_max_of_bid_price_p(v: Vec<(Q4Auction, Q4Bid,)>,) -> u64 {
         v.iter().map(|(_, b)| b.price).max().unwrap()
     }
+
+    #[doc = "q4-avg"]
+    fn q4_avg(v: Vec<(u64, u64,)>,) -> u64 {
+        let sum = v.iter().map(|(_, max)| max).sum::<u64>();
+        let count = v.len() as u64;
+        sum / count
+    }
 }
 
 

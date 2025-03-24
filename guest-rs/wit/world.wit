@@ -87,6 +87,9 @@ interface nexmark {
 
     //q4-max-of-bid-price-pruned
     q4-max-of-bid-price-p: func(v: list<tuple<q4-auction, q4-bid>>) -> u64;
+
+    //q4-avg
+    q4-avg: func(v: list<tuple<u64, u64>>) -> u64;
 }
 
 world component {

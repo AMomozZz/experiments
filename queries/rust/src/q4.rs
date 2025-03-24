@@ -76,7 +76,14 @@ pub fn run_opt(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context) 
 
 
 // Wasm
-pub fn run_wasm_s(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context, wasm_func1: WasmFunction<(u64, u64), (bool,)>, wasm_func2: WasmFunction<(Vec<(Auction, Bid)>,), (u64,)>) {
+pub fn run_wasm_s(
+    auctions: Stream<Auction>, 
+    bids: Stream<Bid>, 
+    ctx: &mut Context, 
+    // wasm_func1: WasmFunction<(u64, u64), (bool,)>, 
+    wasm_func1: WasmFunction<(Vec<(u64, u64)>,), (bool,)>, 
+    wasm_func2: WasmFunction<(Vec<(Auction, Bid)>,), (u64,)>, 
+    wasm_func3: WasmFunction<(Vec<(u64, u64)>,), (u64,)>) {
     // let auctions = auctions.map(ctx, |a| {
     //     Q4PrunedAuction::new(a.id, a.category, a.expires, a.date_time)
     // });
@@ -92,7 +99,8 @@ pub fn run_wasm_s(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Contex
             |auction, bid| (auction.clone(), bid.clone()),
         )
         .filter(ctx, move |(a, b)| {
-            wasm_func1.call((a.date_time, b.date_time)).0 && wasm_func1.call((b.date_time, a.expires)).0
+            // wasm_func1.call((a.date_time, b.date_time)).0 && wasm_func1.call((b.date_time, a.expires)).0
+            wasm_func1.call((vec![(a.date_time, b.date_time), (b.date_time, a.expires)], )).0
         })
         .keyby(ctx, |(a, _)| (a.id, a.category))
         .time_tumbling_holistic_window(ctx, SIZE, move |(_, category), items, _| {
@@ -100,15 +108,20 @@ pub fn run_wasm_s(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Contex
             (*category, max)
         })
         .keyby(ctx, |(_, category)| *category)
-        .time_tumbling_holistic_window(ctx, SIZE, |category, items, _| {
-            let sum = items.iter().map(|(_, max)| max).sum::<u64>();
-            let count = items.len() as u64;
-            Output::new(*category, sum / count)
+        .time_tumbling_holistic_window(ctx, SIZE, move |category, items, _| {
+            let (avg,) = wasm_func3.call((items.to_vec(),));
+            Output::new(*category, avg)
         })
         .drain(ctx);
 }
 
-pub fn run_wasm_m(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context, wasm_func1: WasmFunction<(Vec<(u64, u64)>,), (bool,)>, wasm_func2: WasmFunction<(Vec<(Q4PrunedAuction, Q4PrunedBid)>,), (u64,)>) {
+pub fn run_wasm_m(
+    auctions: Stream<Auction>, 
+    bids: Stream<Bid>, 
+    ctx: &mut Context, 
+    wasm_func1: WasmFunction<(Vec<(u64, u64)>,), (bool,)>, 
+    wasm_func2: WasmFunction<(Vec<(Q4PrunedAuction, Q4PrunedBid)>,), (u64,)>, 
+    wasm_func3: WasmFunction<(Vec<(u64, u64)>,), (u64,)>) {
     let auctions = auctions.map(ctx, |a| {
         Q4PrunedAuction::new(a.id, a.category, a.expires, a.date_time)
     });
@@ -132,10 +145,9 @@ pub fn run_wasm_m(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Contex
             (*category, max)
         })
         .keyby(ctx, |(_, category)| *category)
-        .time_tumbling_holistic_window(ctx, SIZE, |category, items, _| {
-            let sum = items.iter().map(|(_, max)| max).sum::<u64>();
-            let count = items.len() as u64;
-            Output::new(*category, sum / count)
+        .time_tumbling_holistic_window(ctx, SIZE, move |category, items, _| {
+            let (avg,) = wasm_func3.call((items.to_vec(),));
+            Output::new(*category, avg)
         })
         .drain(ctx);
 }
