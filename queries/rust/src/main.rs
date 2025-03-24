@@ -197,8 +197,8 @@ fn main() {
         "q2-wasm-mf" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter)),
         "q2-wasm-mf-opt" => timed(move |ctx| q2::run_wasm_mf(stream(ctx, bids), ctx, wasm_func_multi_filter_opt)),
         "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, wasm_func_string_sf, wasm_func_single_filter)),
-        "q4-wasm-s" => timed(move |ctx| q4::run_wasm_s(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price, wasm_func_q4_avg_p)),
-        "q4-wasm-m" => timed(move |ctx| q4::run_wasm_m(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price_p, wasm_func_q4_avg_p)),
+        "q4-wasm" => timed(move |ctx| q4::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price, wasm_func_q4_avg_p)),
+        "q4-wasm-p" => timed(move |ctx| q4::run_wasm_p(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price_p, wasm_func_q4_avg_p)),
 
         // io
         "io" => {

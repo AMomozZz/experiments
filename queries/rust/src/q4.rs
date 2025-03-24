@@ -76,7 +76,7 @@ pub fn run_opt(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context) 
 
 
 // Wasm
-pub fn run_wasm_s(
+pub fn run_wasm(
     auctions: Stream<Auction>, 
     bids: Stream<Bid>, 
     ctx: &mut Context, 
@@ -115,7 +115,7 @@ pub fn run_wasm_s(
         .drain(ctx);
 }
 
-pub fn run_wasm_m(
+pub fn run_wasm_p(
     auctions: Stream<Auction>, 
     bids: Stream<Bid>, 
     ctx: &mut Context, 
