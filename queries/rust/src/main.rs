@@ -23,7 +23,7 @@ use wasmtime::component::TypedFunc;
 use crate::data::Auction;
 use crate::data::Bid;
 use crate::data::Person;
-use crate::data::{Q4PrunedAuction, Q4PrunedBid};
+use crate::data::{Q4PrunedAuction, Q4PrunedBid, Q5PrunedBid};
 use wasmtime::{component::{Component, Linker, ResourceTable}, Config, Engine, Store};
 use wasmtime_wasi::WasiImpl;
 
@@ -146,6 +146,8 @@ fn main() {
     let wasm_func_q4_max_of_bid_price = get_wasm_func::<(Vec<(Auction, Bid)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-max-of-bid-price");
     let wasm_func_q4_max_of_bid_price_p = get_wasm_func::<(Vec<(Q4PrunedAuction, Q4PrunedBid)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-max-of-bid-price-p");
     let wasm_func_q4_avg_p = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-avg");
+    let wasm_func_q5_count = get_wasm_func::<(Vec<Q5PrunedBid>, ), (u64,)>(&linker, &component, &store_wrapper, "q5-count");
+    let wasm_func_q5_max_by_key = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "q5-max-by-key");
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
         let time = std::time::Instant::now();
@@ -199,6 +201,7 @@ fn main() {
         "q3-wasm" => timed(move |ctx| q3::run_wasm(stream(ctx, auctions), stream(ctx, persons), ctx, wasm_func_string_sf, wasm_func_single_filter)),
         "q4-wasm" => timed(move |ctx| q4::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price, wasm_func_q4_avg_p)),
         "q4-wasm-p" => timed(move |ctx| q4::run_wasm_p(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price_p, wasm_func_q4_avg_p)),
+        "q5-wasm" => timed(move |ctx| q5::run_wasm(stream(ctx, bids), ctx, wasm_func_q5_count, wasm_func_q5_max_by_key)),
 
         // io
         "io" => {

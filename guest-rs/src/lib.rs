@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Guest as NexmarkGuest, Bid, Auction, Q4Auction, Q4Bid};
+use exports::pkg::component::nexmark::{Guest as NexmarkGuest, Bid, Auction, Q4Auction, Q4Bid, Q5Bid};
 
 struct Component;
 
@@ -77,8 +77,14 @@ impl NexmarkGuest for Component {
         let count = v.len() as u64;
         sum / count
     }
+    
+    #[doc = " q5-count"]
+    fn q5_count(v:Vec<Q5Bid>,) -> u64 {
+        v.iter().count() as u64
+    }
+
+    #[doc = "q5-max-by-key"]
+    fn q5_max_by_key(v: Vec<(u64, u64)>,) -> u64 {
+        v.iter().max_by_key(|(_, a)| a).unwrap().0
+    }
 }
-
-
-
-
