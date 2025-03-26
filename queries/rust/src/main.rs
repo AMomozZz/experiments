@@ -125,6 +125,8 @@ fn main() {
 
     let config = Config::new();
     // config.async_support(true);
+    // config.cache_config_load();
+    // config.enable_incremental_compilation();
     let engine = Engine::new(&config).unwrap();
     let host = Host::new();
 
