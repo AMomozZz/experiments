@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput};
+use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid};
 use exports::pkg::component::u64_compare::Guest as U64CompareGuest;
 use crate::pkg::component::data_type::Value;
 
@@ -115,6 +115,11 @@ impl NexmarkGuest for Component {
         let count = v.len() as u64;
         sum / count
     }
+
+    #[doc = "q7"]
+    fn q7(v: Vec<Q7Bid>) -> Q7Bid {
+        *v.iter().max_by_key(|b| b.price).unwrap()
+    }
 }
 
 impl U64CompareGuest for Component {
@@ -154,15 +159,15 @@ impl U64CompareGuest for Component {
         v.into_iter().all(|(a,b)| a > b)
     }
     
-    fn gte_m(v:_rt::Vec::<(u64,u64,)>,) -> bool {
+    fn gte_m(v: Vec<(u64,u64,)>,) -> bool {
         v.into_iter().all(|(a,b)| a >= b)
     }
     
-    fn lt_m(v:_rt::Vec::<(u64,u64,)>,) -> bool {
+    fn lt_m(v: Vec<(u64,u64,)>,) -> bool {
         v.into_iter().all(|(a,b)| a < b)
     }
     
-    fn lte_m(v:_rt::Vec::<(u64,u64,)>,) -> bool {
+    fn lte_m(v: Vec<(u64,u64,)>,) -> bool {
         v.into_iter().all(|(a,b)| a <= b)
     }
 }

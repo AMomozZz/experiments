@@ -229,6 +229,31 @@ pub mod pkg {
                 }
             }
         }
+        #[allow(dead_code, clippy::all)]
+        pub mod q7_records {
+            #[used]
+            #[doc(hidden)]
+            static __FORCE_SECTION_REF: fn() = super::super::super::__link_custom_section_describing_imports;
+            #[repr(C)]
+            #[derive(Clone, Copy)]
+            pub struct Q7Bid {
+                pub auction: u64,
+                pub price: u64,
+                pub bidder: u64,
+            }
+            impl ::core::fmt::Debug for Q7Bid {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("Q7Bid")
+                        .field("auction", &self.auction)
+                        .field("price", &self.price)
+                        .field("bidder", &self.bidder)
+                        .finish()
+                }
+            }
+        }
     }
 }
 #[rustfmt::skip]
@@ -469,6 +494,7 @@ pub mod exports {
                 pub type Q4Bid = super::super::super::super::pkg::component::q4_records::Q4Bid;
                 pub type Q5Bid = super::super::super::super::pkg::component::q5_records::Q5Bid;
                 pub type Q6JoinOutput = super::super::super::super::pkg::component::q6_records::Q6JoinOutput;
+                pub type Q7Bid = super::super::super::super::pkg::component::q7_records::Q7Bid;
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_q1_cabi<T: Guest>(
@@ -1195,6 +1221,28 @@ pub mod exports {
                     );
                     _rt::as_i64(result1)
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_q7_cabi<T: Guest>(
+                    arg0: *mut u8,
+                    arg1: usize,
+                ) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let len0 = arg1;
+                    let result1 = T::q7(
+                        _rt::Vec::from_raw_parts(arg0.cast(), len0, len0),
+                    );
+                    let ptr2 = _RET_AREA.0.as_mut_ptr().cast::<u8>();
+                    let super::super::super::super::pkg::component::q7_records::Q7Bid {
+                        auction: auction3,
+                        price: price3,
+                        bidder: bidder3,
+                    } = result1;
+                    *ptr2.add(0).cast::<i64>() = _rt::as_i64(auction3);
+                    *ptr2.add(8).cast::<i64>() = _rt::as_i64(price3);
+                    *ptr2.add(16).cast::<i64>() = _rt::as_i64(bidder3);
+                    ptr2
+                }
                 pub trait Guest {
                     /// convert-currency
                     /// q1: func(bid: bid) -> bid;
@@ -1239,6 +1287,8 @@ pub mod exports {
                     fn q6_multi_comparison_v(v: _rt::Vec<CompareOpV>) -> bool;
                     /// q6-avg
                     fn q6_avg(v: _rt::Vec<Q6JoinOutput>) -> u64;
+                    /// q7
+                    fn q7(v: _rt::Vec<Q7Bid>) -> Q7Bid;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -1300,7 +1350,9 @@ pub mod exports {
                         #[export_name = "pkg:component/nexmark#q6-avg"] unsafe extern "C"
                         fn export_q6_avg(arg0 : * mut u8, arg1 : usize,) -> i64 {
                         $($path_to_types)*:: _export_q6_avg_cabi::<$ty > (arg0, arg1) }
-                        };
+                        #[export_name = "pkg:component/nexmark#q7"] unsafe extern "C" fn
+                        export_q7(arg0 : * mut u8, arg1 : usize,) -> * mut u8 {
+                        $($path_to_types)*:: _export_q7_cabi::<$ty > (arg0, arg1) } };
                     };
                 }
                 #[doc(hidden)]
@@ -1398,9 +1450,9 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1843] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xb3\x0d\x01A\x02\x01\
-A\x14\x01B\x0b\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1960] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xa8\x0e\x01A\x02\x01\
+A\x17\x01B\x0b\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
 reservew\x09date-timew\x07expiresw\x06sellerw\x08categoryw\x05extras\x04\0\x07au\
 ction\x03\0\0\x01r\x07\x07auctionw\x06bidderw\x05pricew\x07channels\x03urls\x09d\
 ate-timew\x05extras\x04\0\x03bid\x03\0\x02\x01r\x08\x02idw\x04names\x0demail-add\
@@ -1414,34 +1466,36 @@ date-timew\x04\0\x06q4-bid\x03\0\x02\x03\0\x18pkg:component/q4-records\x05\x01\x
 B\x02\x01r\x02\x07auctionw\x06bidderw\x04\0\x06q5-bid\x03\0\0\x03\0\x18pkg:compo\
 nent/q5-records\x05\x02\x01B\x02\x01r\x05\x0eauction-sellerw\x0fauction-expiresw\
 \x11auction-date-timew\x09bid-pricew\x0dbid-date-timew\x04\0\x0eq6-join-output\x03\
-\0\0\x03\0\x18pkg:component/q6-records\x05\x03\x01B\x10\x01@\x02\x06value1w\x06v\
-alue2w\0\x7f\x04\0\x02eq\x01\0\x04\0\x02ne\x01\0\x04\0\x02gt\x01\0\x04\0\x03gte\x01\
-\0\x04\0\x02lt\x01\0\x04\0\x03lte\x01\0\x01o\x02ww\x01p\x01\x01@\x01\x01v\x02\0\x7f\
-\x04\0\x04eq-m\x01\x03\x04\0\x04ne-m\x01\x03\x04\0\x04gt-m\x01\x03\x04\0\x05gte-\
-m\x01\x03\x04\0\x04lt-m\x01\x03\x04\0\x05lte-m\x01\x03\x04\0\x19pkg:component/u6\
-4-compare\x05\x04\x02\x03\0\0\x03bid\x02\x03\0\0\x07auction\x02\x03\0\0\x0ccompa\
-re-op-v\x02\x03\0\0\x05value\x02\x03\0\x01\x0aq4-auction\x02\x03\0\x01\x06q4-bid\
-\x02\x03\0\x02\x06q5-bid\x02\x03\0\x03\x0eq6-join-output\x01B;\x02\x03\x02\x01\x05\
-\x04\0\x03bid\x03\0\0\x02\x03\x02\x01\x06\x04\0\x07auction\x03\0\x02\x02\x03\x02\
-\x01\x07\x04\0\x0ccompare-op-v\x03\0\x04\x02\x03\x02\x01\x08\x04\0\x05value\x03\0\
-\x06\x02\x03\x02\x01\x09\x04\0\x0aq4-auction\x03\0\x08\x02\x03\x02\x01\x0a\x04\0\
-\x06q4-bid\x03\0\x0a\x02\x03\x02\x01\x0b\x04\0\x06q5-bid\x03\0\x0c\x02\x03\x02\x01\
-\x0c\x04\0\x0eq6-join-output\x03\0\x0e\x01o\x04wwww\x01@\x04\x07auctionw\x05pric\
-ew\x06bidderw\x09date-timew\0\x10\x04\0\x02q1\x01\x11\x01pw\x01o\x02ww\x01k\x13\x01\
-@\x03\x07auctionw\x05pricew\x07filters\x12\0\x14\x04\0\x02q2\x01\x15\x01@\x02\x01\
-pw\x07filters\x12\0\x7f\x04\0\x0dsingle-filter\x01\x16\x01o\x02w\x12\x01p\x17\x01\
-@\x01\x01v\x18\0\x7f\x04\0\x0cmulti-filter\x01\x19\x04\0\x10multi-filter-opt\x01\
-\x19\x01ps\x01@\x02\x01ps\x07filters\x1a\0\x7f\x04\0\x14string-single-filter\x01\
-\x1b\x01@\x02\x01aw\x01bw\0\x7f\x04\0\x14less-or-equal-single\x01\x1c\x01p\x13\x01\
-@\x01\x01v\x1d\0\x7f\x04\0\x13less-or-equal-multi\x01\x1e\x01o\x02\x03\x01\x01p\x1f\
-\x01@\x01\x01v\x20\0w\x04\0\x13q4-max-of-bid-price\x01!\x01o\x02\x09\x0b\x01p\"\x01\
-@\x01\x01v#\0w\x04\0\x15q4-max-of-bid-price-p\x01$\x01@\x01\x01v\x1d\0w\x04\0\x06\
-q4-avg\x01%\x01p\x0d\x01@\x01\x01v&\0w\x04\0\x08q5-count\x01'\x04\0\x0dq5-max-by\
--key\x01%\x01p\x05\x01@\x01\x01v(\0\x7f\x04\0\x15q6-multi-comparison-v\x01)\x01p\
-\x0f\x01@\x01\x01v*\0w\x04\0\x06q6-avg\x01+\x04\0\x15pkg:component/nexmark\x05\x0d\
-\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09\
-producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10wit-bindgen-rus\
-t\x060.36.0";
+\0\0\x03\0\x18pkg:component/q6-records\x05\x03\x01B\x02\x01r\x03\x07auctionw\x05\
+pricew\x06bidderw\x04\0\x06q7-bid\x03\0\0\x03\0\x18pkg:component/q7-records\x05\x04\
+\x01B\x10\x01@\x02\x06value1w\x06value2w\0\x7f\x04\0\x02eq\x01\0\x04\0\x02ne\x01\
+\0\x04\0\x02gt\x01\0\x04\0\x03gte\x01\0\x04\0\x02lt\x01\0\x04\0\x03lte\x01\0\x01\
+o\x02ww\x01p\x01\x01@\x01\x01v\x02\0\x7f\x04\0\x04eq-m\x01\x03\x04\0\x04ne-m\x01\
+\x03\x04\0\x04gt-m\x01\x03\x04\0\x05gte-m\x01\x03\x04\0\x04lt-m\x01\x03\x04\0\x05\
+lte-m\x01\x03\x04\0\x19pkg:component/u64-compare\x05\x05\x02\x03\0\0\x03bid\x02\x03\
+\0\0\x07auction\x02\x03\0\0\x0ccompare-op-v\x02\x03\0\0\x05value\x02\x03\0\x01\x0a\
+q4-auction\x02\x03\0\x01\x06q4-bid\x02\x03\0\x02\x06q5-bid\x02\x03\0\x03\x0eq6-j\
+oin-output\x02\x03\0\x04\x06q7-bid\x01B@\x02\x03\x02\x01\x06\x04\0\x03bid\x03\0\0\
+\x02\x03\x02\x01\x07\x04\0\x07auction\x03\0\x02\x02\x03\x02\x01\x08\x04\0\x0ccom\
+pare-op-v\x03\0\x04\x02\x03\x02\x01\x09\x04\0\x05value\x03\0\x06\x02\x03\x02\x01\
+\x0a\x04\0\x0aq4-auction\x03\0\x08\x02\x03\x02\x01\x0b\x04\0\x06q4-bid\x03\0\x0a\
+\x02\x03\x02\x01\x0c\x04\0\x06q5-bid\x03\0\x0c\x02\x03\x02\x01\x0d\x04\0\x0eq6-j\
+oin-output\x03\0\x0e\x02\x03\x02\x01\x0e\x04\0\x06q7-bid\x03\0\x10\x01o\x04wwww\x01\
+@\x04\x07auctionw\x05pricew\x06bidderw\x09date-timew\0\x12\x04\0\x02q1\x01\x13\x01\
+pw\x01o\x02ww\x01k\x15\x01@\x03\x07auctionw\x05pricew\x07filters\x14\0\x16\x04\0\
+\x02q2\x01\x17\x01@\x02\x01pw\x07filters\x14\0\x7f\x04\0\x0dsingle-filter\x01\x18\
+\x01o\x02w\x14\x01p\x19\x01@\x01\x01v\x1a\0\x7f\x04\0\x0cmulti-filter\x01\x1b\x04\
+\0\x10multi-filter-opt\x01\x1b\x01ps\x01@\x02\x01ps\x07filters\x1c\0\x7f\x04\0\x14\
+string-single-filter\x01\x1d\x01@\x02\x01aw\x01bw\0\x7f\x04\0\x14less-or-equal-s\
+ingle\x01\x1e\x01p\x15\x01@\x01\x01v\x1f\0\x7f\x04\0\x13less-or-equal-multi\x01\x20\
+\x01o\x02\x03\x01\x01p!\x01@\x01\x01v\"\0w\x04\0\x13q4-max-of-bid-price\x01#\x01\
+o\x02\x09\x0b\x01p$\x01@\x01\x01v%\0w\x04\0\x15q4-max-of-bid-price-p\x01&\x01@\x01\
+\x01v\x1f\0w\x04\0\x06q4-avg\x01'\x01p\x0d\x01@\x01\x01v(\0w\x04\0\x08q5-count\x01\
+)\x04\0\x0dq5-max-by-key\x01'\x01p\x05\x01@\x01\x01v*\0\x7f\x04\0\x15q6-multi-co\
+mparison-v\x01+\x01p\x0f\x01@\x01\x01v,\0w\x04\0\x06q6-avg\x01-\x01p\x11\x01@\x01\
+\x01v.\0\x11\x04\0\x02q7\x01/\x04\0\x15pkg:component/nexmark\x05\x0f\x04\0\x17pk\
+g:component/component\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09producers\x01\
+\x0cprocessed-by\x02\x0dwit-component\x070.220.1\x10wit-bindgen-rust\x060.36.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {

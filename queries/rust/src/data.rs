@@ -148,3 +148,12 @@ pub struct Q6JoinOutput {
     #[component(name = "bid-date-time")]
     pub bid_date_time: u64,
 }
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct Q7PrunedBid {
+    pub auction: u64,
+    pub price: u64,
+    pub bidder: u64,
+}
