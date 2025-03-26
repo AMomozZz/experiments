@@ -97,3 +97,28 @@ pub fn run_wasm(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context,
         })
         .drain(ctx);
 }
+
+pub fn run_wasm_ng(auctions: Stream<Auction>, bids: Stream<Bid>, ctx: &mut Context, wasm_func1: WasmFunction<(Vec<(u64, u64)>,), (bool,)>, wasm_func2: WasmFunction<(Vec<Q6JoinOutput>,), (u64,)>) {
+    let auctions = auctions.map(ctx, |a| {
+        Q6PrunedAuction::new(a.id, a.seller, a.expires, a.date_time)
+    });
+    let bids = bids.map(ctx, |b| Q6PrunedBid::new(b.auction, b.price, b.date_time));
+    auctions
+        .tumbling_window_join(
+            ctx,
+            bids,
+            |a| a.id,
+            |b| b.auction,
+            TIME_SIZE,
+            |a, b| Q6JoinOutput::new(a.seller, a.expires, a.date_time, b.price, b.date_time),
+        )
+        .filter(ctx, move |i| {
+            wasm_func1.call((vec![(i.auction_date_time, i.bid_date_time), (i.bid_date_time, i.auction_expires)],)).0
+        })
+        .keyby(ctx, |v| v.auction_seller)
+        .count_sliding_holistic_window(ctx, COUNT_SIZE, COUNT_SLIDE, move |seller, data| {
+            let (avg,) = wasm_func2.call((data.iter().cloned().collect::<Vec<Q6JoinOutput>>(),));
+            Output::new(*seller, avg)
+        })
+        .drain(ctx);
+}

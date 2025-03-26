@@ -54,6 +54,22 @@ interface data-type {
     }
 }
 
+interface u64-compare {
+    eq: func(value1: u64, value2: u64) -> bool;
+    ne: func(value1: u64, value2: u64) -> bool;
+    gt: func(value1: u64, value2: u64) -> bool;
+    gte: func(value1: u64, value2: u64) -> bool;
+    lt: func(value1: u64, value2: u64) -> bool;
+    lte: func(value1: u64, value2: u64) -> bool;
+
+    eq-m: func(v: list<tuple<u64, u64>>) -> bool;
+    ne-m: func(v: list<tuple<u64, u64>>) -> bool;
+    gt-m: func(v: list<tuple<u64, u64>>) -> bool;
+    gte-m: func(v: list<tuple<u64, u64>>) -> bool;
+    lt-m: func(v: list<tuple<u64, u64>>) -> bool;
+    lte-m: func(v: list<tuple<u64, u64>>) -> bool;
+}
+
 interface q4-records {
     record q4-auction {
         id: u64,
@@ -142,5 +158,6 @@ world component {
     import data-type;
     import q4-records;
     import q5-records;
+    export u64-compare;
     export nexmark;
 }

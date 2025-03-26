@@ -89,16 +89,16 @@ where
     }
 }
 
-fn get_wasm_func<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, name: &str) -> WasmFunction<I, O> {
+fn get_wasm_func<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> WasmFunction<I, O> {
     let clone_store_wrapper = store_wrapper.clone();
-    WasmFunction::<I, O>::new(get_func_from_component(linker, component, &clone_store_wrapper, name), clone_store_wrapper)
+    WasmFunction::<I, O>::new(get_func_from_component(linker, component, &clone_store_wrapper, pkg_name, name), clone_store_wrapper)
 }
 
-fn get_func_from_component<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, name: &str) -> wasmtime::component::TypedFunc<I, O> {
+fn get_func_from_component<I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList, O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList>(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> wasmtime::component::TypedFunc<I, O> {
     let mut store = store_wrapper.borrow_mut();
     let instance = linker.instantiate(&mut *store, component).unwrap();
     let intf_export = instance
-        .get_export(&mut *store, None, "pkg:component/nexmark")
+        .get_export(&mut *store, None, pkg_name)
         .unwrap();
     let func_export = instance
         .get_export(&mut *store, Some(&intf_export), name)
@@ -136,22 +136,24 @@ fn main() {
     let component = Component::from_binary(&engine, &GUEST_RS_WASI_MODULE).unwrap();
     wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-    let wasm_func_q1 = get_wasm_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&linker, &component, &store_wrapper, "q1");
+    let wasm_func_u64_compare_lt_m = get_wasm_func::<(Vec<(u64, u64)>,), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/u64-compare", "lt-m");
+
+    let wasm_func_q1 = get_wasm_func::<(u64, u64, u64, u64), ((u64, u64, u64, u64),)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q1");
     // let wasm_func_q1 = get_wasm_func::<(Bid,), (Bid,)>(&linker, &component, &store_wrapper, "q1");
-    let wasm_func_q2 = get_wasm_func::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>(&linker, &component, &store_wrapper, "q2");
-    let wasm_func_single_filter = get_wasm_func::<(u64, Vec<u64>, ), (bool,)>(&linker, &component, &store_wrapper, "single-filter");
-    let wasm_func_multi_filter = get_wasm_func::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter");
-    let wasm_func_multi_filter_opt = get_wasm_func::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "multi-filter-opt");
-    let wasm_func_string_sf = get_wasm_func::<(String, Vec<String>, ), (bool,)>(&linker, &component, &store_wrapper, "string-single-filter");
+    let wasm_func_q2 = get_wasm_func::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q2");
+    let wasm_func_single_filter = get_wasm_func::<(u64, Vec<u64>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "single-filter");
+    let wasm_func_multi_filter = get_wasm_func::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "multi-filter");
+    let wasm_func_multi_filter_opt = get_wasm_func::<(Vec<(u64, Vec<u64>)>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "multi-filter-opt");
+    let wasm_func_string_sf = get_wasm_func::<(String, Vec<String>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "string-single-filter");
     // let wasm_func_less_equal_s = get_wasm_func::<(u64,u64, ), (bool,)>(&linker, &component, &store_wrapper, "less-or-equal-single");
-    let wasm_func_less_equal_m = get_wasm_func::<(Vec<(u64,u64)>, ), (bool,)>(&linker, &component, &store_wrapper, "less-or-equal-multi");
-    let wasm_func_q4_max_of_bid_price = get_wasm_func::<(Vec<(Auction, Bid)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-max-of-bid-price");
-    let wasm_func_q4_max_of_bid_price_p = get_wasm_func::<(Vec<(Q4PrunedAuction, Q4PrunedBid)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-max-of-bid-price-p");
-    let wasm_func_q4_avg_p = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "q4-avg");
-    let wasm_func_q5_count = get_wasm_func::<(Vec<Q5PrunedBid>, ), (u64,)>(&linker, &component, &store_wrapper, "q5-count");
-    let wasm_func_q5_max_by_key = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "q5-max-by-key");
-    let wasm_func_q6_multi_compare = get_wasm_func::<(Vec<CompareOpV>, ), (bool,)>(&linker, &component, &store_wrapper, "q6-multi-comparison-v");
-    let wasm_func_q6_avg = get_wasm_func::<(Vec<Q6JoinOutput>, ), (u64,)>(&linker, &component, &store_wrapper, "q6-avg");
+    let wasm_func_less_equal_m = get_wasm_func::<(Vec<(u64,u64)>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "less-or-equal-multi");
+    let wasm_func_q4_max_of_bid_price = get_wasm_func::<(Vec<(Auction, Bid)>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q4-max-of-bid-price");
+    let wasm_func_q4_max_of_bid_price_p = get_wasm_func::<(Vec<(Q4PrunedAuction, Q4PrunedBid)>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q4-max-of-bid-price-p");
+    let wasm_func_q4_avg_p = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q4-avg");
+    let wasm_func_q5_count = get_wasm_func::<(Vec<Q5PrunedBid>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q5-count");
+    let wasm_func_q5_max_by_key = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q5-max-by-key");
+    let wasm_func_q6_multi_compare = get_wasm_func::<(Vec<CompareOpV>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q6-multi-comparison-v");
+    let wasm_func_q6_avg = get_wasm_func::<(Vec<Q6JoinOutput>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q6-avg");
     
 
 
@@ -209,6 +211,7 @@ fn main() {
         "q4-wasm-p" => timed(move |ctx| q4::run_wasm_p(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price_p, wasm_func_q4_avg_p)),
         "q5-wasm" => timed(move |ctx| q5::run_wasm(stream(ctx, bids), ctx, wasm_func_q5_count, wasm_func_q5_max_by_key)),
         "q6-wasm" => timed(move |ctx| q6::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_q6_multi_compare, wasm_func_q6_avg)),
+        "q6-wasm-ng" => timed(move |ctx| q6::run_wasm_ng(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_u64_compare_lt_m, wasm_func_q6_avg)),
 
 
         // io

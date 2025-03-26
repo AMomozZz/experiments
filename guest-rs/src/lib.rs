@@ -3,6 +3,7 @@ wit_bindgen::generate!({
 });
 
 use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput};
+use exports::pkg::component::u64_compare::Guest as U64CompareGuest;
 use crate::pkg::component::data_type::Value;
 
 struct Component;
@@ -113,5 +114,55 @@ impl NexmarkGuest for Component {
         let sum = v.iter().map(|v| v.bid_price).sum::<u64>();
         let count = v.len() as u64;
         sum / count
+    }
+}
+
+impl U64CompareGuest for Component {
+    fn eq(value1:u64,value2:u64,) -> bool {
+        value1 == value2
+    }
+
+    fn ne(value1:u64,value2:u64,) -> bool {
+        value1 != value2
+    }
+
+    fn gt(value1:u64,value2:u64,) -> bool {
+        value1 > value2
+    }
+
+    fn gte(value1:u64,value2:u64,) -> bool {
+        value1 >= value2
+    }
+
+    fn lt(value1:u64,value2:u64,) -> bool {
+        value1 < value2
+    }
+
+    fn lte(value1:u64,value2:u64,) -> bool {
+        value1 <= value2
+    }
+    
+    fn eq_m(v: Vec<(u64,u64,)>,) -> bool {
+        v.into_iter().all(|(a,b)| a == b)
+    }
+    
+    fn ne_m(v: Vec<(u64,u64,)>,) -> bool {
+        v.into_iter().all(|(a,b)| a != b)
+    }
+    
+    fn gt_m(v: Vec<(u64,u64,)>,) -> bool {
+        v.into_iter().all(|(a,b)| a > b)
+    }
+    
+    fn gte_m(v:_rt::Vec::<(u64,u64,)>,) -> bool {
+        v.into_iter().all(|(a,b)| a >= b)
+    }
+    
+    fn lt_m(v:_rt::Vec::<(u64,u64,)>,) -> bool {
+        v.into_iter().all(|(a,b)| a < b)
+    }
+    
+    fn lte_m(v:_rt::Vec::<(u64,u64,)>,) -> bool {
+        v.into_iter().all(|(a,b)| a <= b)
     }
 }
