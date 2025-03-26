@@ -37,6 +37,21 @@ interface data-type {
         date-time: u64,
         extra: string,
     }
+    
+    variant value {
+        ty-u64(u64),
+        ty-string(string),
+    }
+
+    variant compare-op-v {
+        eq(tuple<value, value>),    // ==
+        ne(tuple<value, value>),    // !=
+        gt(tuple<value, value>),    // >
+        gte(tuple<value, value>),   // >=
+        lt(tuple<value, value>),    // <
+        lte(tuple<value, value>),    // <=
+        // contains(tuple<value, list<value>>), // contains
+    }
 }
 
 interface q4-records {
@@ -59,19 +74,10 @@ interface q5-records {
         auction: u64,
         bidder: u64,
     }
-
-    // record window {
-    //     slices: list<list<q5-bid>>,
-    // }
-
-    // record window-iter {
-    //     slices: list<list<q5-bid>>,
-    //     idx: u32,
-    // }
 }
 
 interface nexmark {
-    use data-type.{bid, auction};
+    use data-type.{bid, auction, compare-op-v, value};
     use q4-records.{q4-auction, q4-bid};
     use q5-records.{q5-bid};
     //convert-currency
@@ -113,6 +119,9 @@ interface nexmark {
 
     //q5-max-by-key
     q5-max-by-key: func(v: list<tuple<u64, u64>>) -> u64;
+
+    //q6-multi-comparison
+    q6-multi-comparison-v: func(v: list<compare-op-v>,) -> bool;
 }
 
 world component {

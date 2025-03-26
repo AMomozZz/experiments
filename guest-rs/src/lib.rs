@@ -2,7 +2,8 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Guest as NexmarkGuest, Bid, Auction, Q4Auction, Q4Bid, Q5Bid};
+use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid};
+use crate::pkg::component::data_type::Value;
 
 struct Component;
 
@@ -86,5 +87,24 @@ impl NexmarkGuest for Component {
     #[doc = "q5-max-by-key"]
     fn q5_max_by_key(v: Vec<(u64, u64)>,) -> u64 {
         v.iter().max_by_key(|(_, a)| a).unwrap().0
+    }
+    
+    #[doc = " q6-multi-comparison"]
+    fn q6_multi_comparison_v(v: Vec<CompareOpV>,) -> bool {
+        v.into_iter().all(|op| {
+            match op {
+                CompareOpV::Eq((Value::TyU64(a), Value::TyU64(b)),) => Some(a == b),
+                CompareOpV::Eq((Value::TyString(a), Value::TyString(b)),) => Some(a == b),
+                
+                CompareOpV::Ne((Value::TyU64(a), Value::TyU64(b)),) => Some(a != b),
+                CompareOpV::Ne((Value::TyString(a), Value::TyString(b)),) => Some(a != b),
+        
+                CompareOpV::Gt((Value::TyU64(a), Value::TyU64(b)),) => Some(a > b),
+                CompareOpV::Gte((Value::TyU64(a), Value::TyU64(b)),) => Some(a >= b),
+                CompareOpV::Lt((Value::TyU64(a), Value::TyU64(b)),) => Some(a < b),
+                CompareOpV::Lte((Value::TyU64(a), Value::TyU64(b)),) => Some(a <= b),
+                _ => None,
+            }.unwrap_or(false)
+        })
     }
 }

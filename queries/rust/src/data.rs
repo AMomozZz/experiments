@@ -1,5 +1,5 @@
 use runtime::prelude::*;
-use wasmtime::component::{ComponentType, Lower, Lift};
+use wasmtime::component::{ComponentType, Lift, Lower};
 
 #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
 #[serde(crate = "runtime::prelude::serde")]
@@ -81,4 +81,54 @@ pub struct Q4PrunedBid {
 pub struct Q5PrunedBid {
     pub auction: u64,
     pub bidder: u64,
+}
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct Q6PrunedAuction {
+    pub id: u64,
+    pub seller: u64,
+    pub expires: u64,
+    #[component(name = "date-time")]
+    pub date_time: u64,
+}
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct Q6PrunedBid {
+    pub auction: u64,
+    pub price: u64,
+    #[component(name = "date-time")]
+    pub date_time: u64,
+}
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(variant)]
+pub enum Value {
+    #[component(name = "ty-u64")]
+    TyU64(u64),
+    #[component(name = "ty-string")]
+    TyString(String),
+}
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(variant)]
+pub enum CompareOpV {
+    #[component(name = "eq")]
+    Eq((Value, Value),),   // ==ne
+    #[component(name = "ne")]
+    Ne((Value, Value),),   // !=
+    #[component(name = "gt")]
+    Gt((Value, Value),),   // >
+    #[component(name = "gte")]
+    Gte((Value, Value),),  // >=
+    #[component(name = "lt")]
+    Lt((Value, Value),),   // <
+    #[component(name = "lte")]
+    Lte((Value, Value),),  // <=
+    // Contains((Value, Vec<Value>),),
 }

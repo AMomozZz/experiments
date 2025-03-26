@@ -69,6 +69,67 @@ pub mod pkg {
                         .finish()
                 }
             }
+            #[derive(Clone)]
+            pub enum Value {
+                TyU64(u64),
+                TyString(_rt::String),
+            }
+            impl ::core::fmt::Debug for Value {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    match self {
+                        Value::TyU64(e) => {
+                            f.debug_tuple("Value::TyU64").field(e).finish()
+                        }
+                        Value::TyString(e) => {
+                            f.debug_tuple("Value::TyString").field(e).finish()
+                        }
+                    }
+                }
+            }
+            #[derive(Clone)]
+            pub enum CompareOpV {
+                Eq((Value, Value)),
+                /// ==
+                Ne((Value, Value)),
+                /// !=
+                Gt((Value, Value)),
+                /// >
+                Gte((Value, Value)),
+                /// >=
+                Lt((Value, Value)),
+                /// <
+                Lte((Value, Value)),
+            }
+            impl ::core::fmt::Debug for CompareOpV {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    match self {
+                        CompareOpV::Eq(e) => {
+                            f.debug_tuple("CompareOpV::Eq").field(e).finish()
+                        }
+                        CompareOpV::Ne(e) => {
+                            f.debug_tuple("CompareOpV::Ne").field(e).finish()
+                        }
+                        CompareOpV::Gt(e) => {
+                            f.debug_tuple("CompareOpV::Gt").field(e).finish()
+                        }
+                        CompareOpV::Gte(e) => {
+                            f.debug_tuple("CompareOpV::Gte").field(e).finish()
+                        }
+                        CompareOpV::Lt(e) => {
+                            f.debug_tuple("CompareOpV::Lt").field(e).finish()
+                        }
+                        CompareOpV::Lte(e) => {
+                            f.debug_tuple("CompareOpV::Lte").field(e).finish()
+                        }
+                    }
+                }
+            }
         }
         #[allow(dead_code, clippy::all)]
         pub mod q4_records {
@@ -154,6 +215,7 @@ pub mod exports {
                 use super::super::super::super::_rt;
                 pub type Bid = super::super::super::super::pkg::component::data_type::Bid;
                 pub type Auction = super::super::super::super::pkg::component::data_type::Auction;
+                pub type CompareOpV = super::super::super::super::pkg::component::data_type::CompareOpV;
                 pub type Q4Auction = super::super::super::super::pkg::component::q4_records::Q4Auction;
                 pub type Q4Bid = super::super::super::super::pkg::component::q4_records::Q4Bid;
                 pub type Q5Bid = super::super::super::super::pkg::component::q5_records::Q5Bid;
@@ -493,6 +555,383 @@ pub mod exports {
                     );
                     _rt::as_i64(result1)
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_q6_multi_comparison_v_cabi<T: Guest>(
+                    arg0: *mut u8,
+                    arg1: usize,
+                ) -> i32 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    let base74 = arg0;
+                    let len74 = arg1;
+                    let mut result74 = _rt::Vec::with_capacity(len74);
+                    for i in 0..len74 {
+                        let base = base74.add(i * 40);
+                        let e74 = {
+                            let l0 = i32::from(*base.add(0).cast::<u8>());
+                            use super::super::super::super::pkg::component::data_type::CompareOpV as V73;
+                            let v73 = match l0 {
+                                0 => {
+                                    let e73 = {
+                                        let l1 = i32::from(*base.add(8).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V6;
+                                        let v6 = match l1 {
+                                            0 => {
+                                                let e6 = {
+                                                    let l2 = *base.add(16).cast::<i64>();
+                                                    l2 as u64
+                                                };
+                                                V6::TyU64(e6)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e6 = {
+                                                    let l3 = *base.add(16).cast::<*mut u8>();
+                                                    let l4 = *base.add(20).cast::<usize>();
+                                                    let len5 = l4;
+                                                    let bytes5 = _rt::Vec::from_raw_parts(
+                                                        l3.cast(),
+                                                        len5,
+                                                        len5,
+                                                    );
+                                                    _rt::string_lift(bytes5)
+                                                };
+                                                V6::TyString(e6)
+                                            }
+                                        };
+                                        let l7 = i32::from(*base.add(24).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V12;
+                                        let v12 = match l7 {
+                                            0 => {
+                                                let e12 = {
+                                                    let l8 = *base.add(32).cast::<i64>();
+                                                    l8 as u64
+                                                };
+                                                V12::TyU64(e12)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e12 = {
+                                                    let l9 = *base.add(32).cast::<*mut u8>();
+                                                    let l10 = *base.add(36).cast::<usize>();
+                                                    let len11 = l10;
+                                                    let bytes11 = _rt::Vec::from_raw_parts(
+                                                        l9.cast(),
+                                                        len11,
+                                                        len11,
+                                                    );
+                                                    _rt::string_lift(bytes11)
+                                                };
+                                                V12::TyString(e12)
+                                            }
+                                        };
+                                        (v6, v12)
+                                    };
+                                    V73::Eq(e73)
+                                }
+                                1 => {
+                                    let e73 = {
+                                        let l13 = i32::from(*base.add(8).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V18;
+                                        let v18 = match l13 {
+                                            0 => {
+                                                let e18 = {
+                                                    let l14 = *base.add(16).cast::<i64>();
+                                                    l14 as u64
+                                                };
+                                                V18::TyU64(e18)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e18 = {
+                                                    let l15 = *base.add(16).cast::<*mut u8>();
+                                                    let l16 = *base.add(20).cast::<usize>();
+                                                    let len17 = l16;
+                                                    let bytes17 = _rt::Vec::from_raw_parts(
+                                                        l15.cast(),
+                                                        len17,
+                                                        len17,
+                                                    );
+                                                    _rt::string_lift(bytes17)
+                                                };
+                                                V18::TyString(e18)
+                                            }
+                                        };
+                                        let l19 = i32::from(*base.add(24).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V24;
+                                        let v24 = match l19 {
+                                            0 => {
+                                                let e24 = {
+                                                    let l20 = *base.add(32).cast::<i64>();
+                                                    l20 as u64
+                                                };
+                                                V24::TyU64(e24)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e24 = {
+                                                    let l21 = *base.add(32).cast::<*mut u8>();
+                                                    let l22 = *base.add(36).cast::<usize>();
+                                                    let len23 = l22;
+                                                    let bytes23 = _rt::Vec::from_raw_parts(
+                                                        l21.cast(),
+                                                        len23,
+                                                        len23,
+                                                    );
+                                                    _rt::string_lift(bytes23)
+                                                };
+                                                V24::TyString(e24)
+                                            }
+                                        };
+                                        (v18, v24)
+                                    };
+                                    V73::Ne(e73)
+                                }
+                                2 => {
+                                    let e73 = {
+                                        let l25 = i32::from(*base.add(8).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V30;
+                                        let v30 = match l25 {
+                                            0 => {
+                                                let e30 = {
+                                                    let l26 = *base.add(16).cast::<i64>();
+                                                    l26 as u64
+                                                };
+                                                V30::TyU64(e30)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e30 = {
+                                                    let l27 = *base.add(16).cast::<*mut u8>();
+                                                    let l28 = *base.add(20).cast::<usize>();
+                                                    let len29 = l28;
+                                                    let bytes29 = _rt::Vec::from_raw_parts(
+                                                        l27.cast(),
+                                                        len29,
+                                                        len29,
+                                                    );
+                                                    _rt::string_lift(bytes29)
+                                                };
+                                                V30::TyString(e30)
+                                            }
+                                        };
+                                        let l31 = i32::from(*base.add(24).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V36;
+                                        let v36 = match l31 {
+                                            0 => {
+                                                let e36 = {
+                                                    let l32 = *base.add(32).cast::<i64>();
+                                                    l32 as u64
+                                                };
+                                                V36::TyU64(e36)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e36 = {
+                                                    let l33 = *base.add(32).cast::<*mut u8>();
+                                                    let l34 = *base.add(36).cast::<usize>();
+                                                    let len35 = l34;
+                                                    let bytes35 = _rt::Vec::from_raw_parts(
+                                                        l33.cast(),
+                                                        len35,
+                                                        len35,
+                                                    );
+                                                    _rt::string_lift(bytes35)
+                                                };
+                                                V36::TyString(e36)
+                                            }
+                                        };
+                                        (v30, v36)
+                                    };
+                                    V73::Gt(e73)
+                                }
+                                3 => {
+                                    let e73 = {
+                                        let l37 = i32::from(*base.add(8).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V42;
+                                        let v42 = match l37 {
+                                            0 => {
+                                                let e42 = {
+                                                    let l38 = *base.add(16).cast::<i64>();
+                                                    l38 as u64
+                                                };
+                                                V42::TyU64(e42)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e42 = {
+                                                    let l39 = *base.add(16).cast::<*mut u8>();
+                                                    let l40 = *base.add(20).cast::<usize>();
+                                                    let len41 = l40;
+                                                    let bytes41 = _rt::Vec::from_raw_parts(
+                                                        l39.cast(),
+                                                        len41,
+                                                        len41,
+                                                    );
+                                                    _rt::string_lift(bytes41)
+                                                };
+                                                V42::TyString(e42)
+                                            }
+                                        };
+                                        let l43 = i32::from(*base.add(24).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V48;
+                                        let v48 = match l43 {
+                                            0 => {
+                                                let e48 = {
+                                                    let l44 = *base.add(32).cast::<i64>();
+                                                    l44 as u64
+                                                };
+                                                V48::TyU64(e48)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e48 = {
+                                                    let l45 = *base.add(32).cast::<*mut u8>();
+                                                    let l46 = *base.add(36).cast::<usize>();
+                                                    let len47 = l46;
+                                                    let bytes47 = _rt::Vec::from_raw_parts(
+                                                        l45.cast(),
+                                                        len47,
+                                                        len47,
+                                                    );
+                                                    _rt::string_lift(bytes47)
+                                                };
+                                                V48::TyString(e48)
+                                            }
+                                        };
+                                        (v42, v48)
+                                    };
+                                    V73::Gte(e73)
+                                }
+                                4 => {
+                                    let e73 = {
+                                        let l49 = i32::from(*base.add(8).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V54;
+                                        let v54 = match l49 {
+                                            0 => {
+                                                let e54 = {
+                                                    let l50 = *base.add(16).cast::<i64>();
+                                                    l50 as u64
+                                                };
+                                                V54::TyU64(e54)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e54 = {
+                                                    let l51 = *base.add(16).cast::<*mut u8>();
+                                                    let l52 = *base.add(20).cast::<usize>();
+                                                    let len53 = l52;
+                                                    let bytes53 = _rt::Vec::from_raw_parts(
+                                                        l51.cast(),
+                                                        len53,
+                                                        len53,
+                                                    );
+                                                    _rt::string_lift(bytes53)
+                                                };
+                                                V54::TyString(e54)
+                                            }
+                                        };
+                                        let l55 = i32::from(*base.add(24).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V60;
+                                        let v60 = match l55 {
+                                            0 => {
+                                                let e60 = {
+                                                    let l56 = *base.add(32).cast::<i64>();
+                                                    l56 as u64
+                                                };
+                                                V60::TyU64(e60)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e60 = {
+                                                    let l57 = *base.add(32).cast::<*mut u8>();
+                                                    let l58 = *base.add(36).cast::<usize>();
+                                                    let len59 = l58;
+                                                    let bytes59 = _rt::Vec::from_raw_parts(
+                                                        l57.cast(),
+                                                        len59,
+                                                        len59,
+                                                    );
+                                                    _rt::string_lift(bytes59)
+                                                };
+                                                V60::TyString(e60)
+                                            }
+                                        };
+                                        (v54, v60)
+                                    };
+                                    V73::Lt(e73)
+                                }
+                                n => {
+                                    debug_assert_eq!(n, 5, "invalid enum discriminant");
+                                    let e73 = {
+                                        let l61 = i32::from(*base.add(8).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V66;
+                                        let v66 = match l61 {
+                                            0 => {
+                                                let e66 = {
+                                                    let l62 = *base.add(16).cast::<i64>();
+                                                    l62 as u64
+                                                };
+                                                V66::TyU64(e66)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e66 = {
+                                                    let l63 = *base.add(16).cast::<*mut u8>();
+                                                    let l64 = *base.add(20).cast::<usize>();
+                                                    let len65 = l64;
+                                                    let bytes65 = _rt::Vec::from_raw_parts(
+                                                        l63.cast(),
+                                                        len65,
+                                                        len65,
+                                                    );
+                                                    _rt::string_lift(bytes65)
+                                                };
+                                                V66::TyString(e66)
+                                            }
+                                        };
+                                        let l67 = i32::from(*base.add(24).cast::<u8>());
+                                        use super::super::super::super::pkg::component::data_type::Value as V72;
+                                        let v72 = match l67 {
+                                            0 => {
+                                                let e72 = {
+                                                    let l68 = *base.add(32).cast::<i64>();
+                                                    l68 as u64
+                                                };
+                                                V72::TyU64(e72)
+                                            }
+                                            n => {
+                                                debug_assert_eq!(n, 1, "invalid enum discriminant");
+                                                let e72 = {
+                                                    let l69 = *base.add(32).cast::<*mut u8>();
+                                                    let l70 = *base.add(36).cast::<usize>();
+                                                    let len71 = l70;
+                                                    let bytes71 = _rt::Vec::from_raw_parts(
+                                                        l69.cast(),
+                                                        len71,
+                                                        len71,
+                                                    );
+                                                    _rt::string_lift(bytes71)
+                                                };
+                                                V72::TyString(e72)
+                                            }
+                                        };
+                                        (v66, v72)
+                                    };
+                                    V73::Lte(e73)
+                                }
+                            };
+                            v73
+                        };
+                        result74.push(e74);
+                    }
+                    _rt::cabi_dealloc(base74, len74 * 40, 8);
+                    let result75 = T::q6_multi_comparison_v(result74);
+                    match result75 {
+                        true => 1,
+                        false => 0,
+                    }
+                }
                 pub trait Guest {
                     /// convert-currency
                     /// q1: func(bid: bid) -> bid;
@@ -533,6 +972,8 @@ pub mod exports {
                     fn q5_count(v: _rt::Vec<Q5Bid>) -> u64;
                     /// q5-max-by-key
                     fn q5_max_by_key(v: _rt::Vec<(u64, u64)>) -> u64;
+                    /// q6-multi-comparison
+                    fn q6_multi_comparison_v(v: _rt::Vec<CompareOpV>) -> bool;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -586,7 +1027,11 @@ pub mod exports {
                         #[export_name = "pkg:component/nexmark#q5-max-by-key"] unsafe
                         extern "C" fn export_q5_max_by_key(arg0 : * mut u8, arg1 :
                         usize,) -> i64 { $($path_to_types)*::
-                        _export_q5_max_by_key_cabi::<$ty > (arg0, arg1) } };
+                        _export_q5_max_by_key_cabi::<$ty > (arg0, arg1) } #[export_name =
+                        "pkg:component/nexmark#q6-multi-comparison-v"] unsafe extern "C"
+                        fn export_q6_multi_comparison_v(arg0 : * mut u8, arg1 : usize,)
+                        -> i32 { $($path_to_types)*::
+                        _export_q6_multi_comparison_v_cabi::<$ty > (arg0, arg1) } };
                     };
                 }
                 #[doc(hidden)]
@@ -681,36 +1126,41 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1270] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xf6\x08\x01A\x02\x01\
-A\x0d\x01B\x06\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1474] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xc2\x0a\x01A\x02\x01\
+A\x0f\x01B\x0b\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
 reservew\x09date-timew\x07expiresw\x06sellerw\x08categoryw\x05extras\x04\0\x07au\
 ction\x03\0\0\x01r\x07\x07auctionw\x06bidderw\x05pricew\x07channels\x03urls\x09d\
 ate-timew\x05extras\x04\0\x03bid\x03\0\x02\x01r\x08\x02idw\x04names\x0demail-add\
 resss\x0bcredit-cards\x04citys\x05states\x09date-timew\x05extras\x04\0\x06person\
-\x03\0\x04\x03\0\x17pkg:component/data-type\x05\0\x01B\x04\x01r\x04\x02idw\x08ca\
-tegoryw\x07expiresw\x09date-timew\x04\0\x0aq4-auction\x03\0\0\x01r\x03\x07auctio\
-nw\x05pricew\x09date-timew\x04\0\x06q4-bid\x03\0\x02\x03\0\x18pkg:component/q4-r\
-ecords\x05\x01\x01B\x02\x01r\x02\x07auctionw\x06bidderw\x04\0\x06q5-bid\x03\0\0\x03\
-\0\x18pkg:component/q5-records\x05\x02\x02\x03\0\0\x03bid\x02\x03\0\0\x07auction\
-\x02\x03\0\x01\x0aq4-auction\x02\x03\0\x01\x06q4-bid\x02\x03\0\x02\x06q5-bid\x01\
-B/\x02\x03\x02\x01\x03\x04\0\x03bid\x03\0\0\x02\x03\x02\x01\x04\x04\0\x07auction\
-\x03\0\x02\x02\x03\x02\x01\x05\x04\0\x0aq4-auction\x03\0\x04\x02\x03\x02\x01\x06\
-\x04\0\x06q4-bid\x03\0\x06\x02\x03\x02\x01\x07\x04\0\x06q5-bid\x03\0\x08\x01o\x04\
-wwww\x01@\x04\x07auctionw\x05pricew\x06bidderw\x09date-timew\0\x0a\x04\0\x02q1\x01\
-\x0b\x01pw\x01o\x02ww\x01k\x0d\x01@\x03\x07auctionw\x05pricew\x07filters\x0c\0\x0e\
-\x04\0\x02q2\x01\x0f\x01@\x02\x01pw\x07filters\x0c\0\x7f\x04\0\x0dsingle-filter\x01\
-\x10\x01o\x02w\x0c\x01p\x11\x01@\x01\x01v\x12\0\x7f\x04\0\x0cmulti-filter\x01\x13\
-\x04\0\x10multi-filter-opt\x01\x13\x01ps\x01@\x02\x01ps\x07filters\x14\0\x7f\x04\
-\0\x14string-single-filter\x01\x15\x01@\x02\x01aw\x01bw\0\x7f\x04\0\x14less-or-e\
-qual-single\x01\x16\x01p\x0d\x01@\x01\x01v\x17\0\x7f\x04\0\x13less-or-equal-mult\
-i\x01\x18\x01o\x02\x03\x01\x01p\x19\x01@\x01\x01v\x1a\0w\x04\0\x13q4-max-of-bid-\
-price\x01\x1b\x01o\x02\x05\x07\x01p\x1c\x01@\x01\x01v\x1d\0w\x04\0\x15q4-max-of-\
-bid-price-p\x01\x1e\x01@\x01\x01v\x17\0w\x04\0\x06q4-avg\x01\x1f\x01p\x09\x01@\x01\
-\x01v\x20\0w\x04\0\x08q5-count\x01!\x04\0\x0dq5-max-by-key\x01\x1f\x04\0\x15pkg:\
-component/nexmark\x05\x08\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\0\x09\
-component\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\x070.\
-220.1\x10wit-bindgen-rust\x060.36.0";
+\x03\0\x04\x01q\x02\x06ty-u64\x01w\0\x09ty-string\x01s\0\x04\0\x05value\x03\0\x06\
+\x01o\x02\x07\x07\x01q\x06\x02eq\x01\x08\0\x02ne\x01\x08\0\x02gt\x01\x08\0\x03gt\
+e\x01\x08\0\x02lt\x01\x08\0\x03lte\x01\x08\0\x04\0\x0ccompare-op-v\x03\0\x09\x03\
+\0\x17pkg:component/data-type\x05\0\x01B\x04\x01r\x04\x02idw\x08categoryw\x07exp\
+iresw\x09date-timew\x04\0\x0aq4-auction\x03\0\0\x01r\x03\x07auctionw\x05pricew\x09\
+date-timew\x04\0\x06q4-bid\x03\0\x02\x03\0\x18pkg:component/q4-records\x05\x01\x01\
+B\x02\x01r\x02\x07auctionw\x06bidderw\x04\0\x06q5-bid\x03\0\0\x03\0\x18pkg:compo\
+nent/q5-records\x05\x02\x02\x03\0\0\x03bid\x02\x03\0\0\x07auction\x02\x03\0\0\x0c\
+compare-op-v\x02\x03\0\0\x05value\x02\x03\0\x01\x0aq4-auction\x02\x03\0\x01\x06q\
+4-bid\x02\x03\0\x02\x06q5-bid\x01B6\x02\x03\x02\x01\x03\x04\0\x03bid\x03\0\0\x02\
+\x03\x02\x01\x04\x04\0\x07auction\x03\0\x02\x02\x03\x02\x01\x05\x04\0\x0ccompare\
+-op-v\x03\0\x04\x02\x03\x02\x01\x06\x04\0\x05value\x03\0\x06\x02\x03\x02\x01\x07\
+\x04\0\x0aq4-auction\x03\0\x08\x02\x03\x02\x01\x08\x04\0\x06q4-bid\x03\0\x0a\x02\
+\x03\x02\x01\x09\x04\0\x06q5-bid\x03\0\x0c\x01o\x04wwww\x01@\x04\x07auctionw\x05\
+pricew\x06bidderw\x09date-timew\0\x0e\x04\0\x02q1\x01\x0f\x01pw\x01o\x02ww\x01k\x11\
+\x01@\x03\x07auctionw\x05pricew\x07filters\x10\0\x12\x04\0\x02q2\x01\x13\x01@\x02\
+\x01pw\x07filters\x10\0\x7f\x04\0\x0dsingle-filter\x01\x14\x01o\x02w\x10\x01p\x15\
+\x01@\x01\x01v\x16\0\x7f\x04\0\x0cmulti-filter\x01\x17\x04\0\x10multi-filter-opt\
+\x01\x17\x01ps\x01@\x02\x01ps\x07filters\x18\0\x7f\x04\0\x14string-single-filter\
+\x01\x19\x01@\x02\x01aw\x01bw\0\x7f\x04\0\x14less-or-equal-single\x01\x1a\x01p\x11\
+\x01@\x01\x01v\x1b\0\x7f\x04\0\x13less-or-equal-multi\x01\x1c\x01o\x02\x03\x01\x01\
+p\x1d\x01@\x01\x01v\x1e\0w\x04\0\x13q4-max-of-bid-price\x01\x1f\x01o\x02\x09\x0b\
+\x01p\x20\x01@\x01\x01v!\0w\x04\0\x15q4-max-of-bid-price-p\x01\"\x01@\x01\x01v\x1b\
+\0w\x04\0\x06q4-avg\x01#\x01p\x0d\x01@\x01\x01v$\0w\x04\0\x08q5-count\x01%\x04\0\
+\x0dq5-max-by-key\x01#\x01p\x05\x01@\x01\x01v&\0\x7f\x04\0\x15q6-multi-compariso\
+n-v\x01'\x04\0\x15pkg:component/nexmark\x05\x0a\x04\0\x17pkg:component/component\
+\x04\0\x0b\x0f\x01\0\x09component\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\
+\x0dwit-component\x070.220.1\x10wit-bindgen-rust\x060.36.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {
