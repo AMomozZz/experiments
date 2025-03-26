@@ -76,10 +76,21 @@ interface q5-records {
     }
 }
 
+interface q6-records {
+    record q6-join-output {
+        auction-seller: u64,
+        auction-expires: u64,
+        auction-date-time: u64,
+        bid-price: u64,
+        bid-date-time: u64,
+    }
+}
+
 interface nexmark {
     use data-type.{bid, auction, compare-op-v, value};
     use q4-records.{q4-auction, q4-bid};
     use q5-records.{q5-bid};
+    use q6-records.{q6-join-output};
     //convert-currency
     // q1: func(bid: bid) -> bid;
     q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
@@ -122,6 +133,9 @@ interface nexmark {
 
     //q6-multi-comparison
     q6-multi-comparison-v: func(v: list<compare-op-v>,) -> bool;
+
+    //q6-avg
+    q6-avg: func(v: list<q6-join-output>) -> u64;
 }
 
 world component {

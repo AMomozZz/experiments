@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid};
+use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput};
 use crate::pkg::component::data_type::Value;
 
 struct Component;
@@ -106,5 +106,12 @@ impl NexmarkGuest for Component {
                 _ => None,
             }.unwrap_or(false)
         })
+    }
+
+    #[doc = "q6-avg"]
+    fn q6_avg(v: Vec<Q6JoinOutput>) -> u64 {
+        let sum = v.iter().map(|v| v.bid_price).sum::<u64>();
+        let count = v.len() as u64;
+        sum / count
     }
 }

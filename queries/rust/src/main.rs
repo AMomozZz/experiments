@@ -16,6 +16,7 @@ use std::io::BufRead;
 use std::rc::Rc;
 
 use data::CompareOpV;
+use data::Q6JoinOutput;
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
@@ -150,6 +151,8 @@ fn main() {
     let wasm_func_q5_count = get_wasm_func::<(Vec<Q5PrunedBid>, ), (u64,)>(&linker, &component, &store_wrapper, "q5-count");
     let wasm_func_q5_max_by_key = get_wasm_func::<(Vec<(u64, u64)>, ), (u64,)>(&linker, &component, &store_wrapper, "q5-max-by-key");
     let wasm_func_q6_multi_compare = get_wasm_func::<(Vec<CompareOpV>, ), (bool,)>(&linker, &component, &store_wrapper, "q6-multi-comparison-v");
+    let wasm_func_q6_avg = get_wasm_func::<(Vec<Q6JoinOutput>, ), (u64,)>(&linker, &component, &store_wrapper, "q6-avg");
+    
 
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
@@ -205,7 +208,7 @@ fn main() {
         "q4-wasm" => timed(move |ctx| q4::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price, wasm_func_q4_avg_p)),
         "q4-wasm-p" => timed(move |ctx| q4::run_wasm_p(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_less_equal_m, wasm_func_q4_max_of_bid_price_p, wasm_func_q4_avg_p)),
         "q5-wasm" => timed(move |ctx| q5::run_wasm(stream(ctx, bids), ctx, wasm_func_q5_count, wasm_func_q5_max_by_key)),
-        "q6-wasm" => timed(move |ctx| q6::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_q6_multi_compare)),
+        "q6-wasm" => timed(move |ctx| q6::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_q6_multi_compare, wasm_func_q6_avg)),
 
 
         // io

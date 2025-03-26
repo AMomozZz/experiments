@@ -132,3 +132,19 @@ pub enum CompareOpV {
     Lte((Value, Value),),  // <=
     // Contains((Value, Vec<Value>),),
 }
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct Q6JoinOutput {
+    #[component(name = "auction-seller")]
+    pub auction_seller: u64,
+    #[component(name = "auction-expires")]
+    pub auction_expires: u64,
+    #[component(name = "auction-date-time")]
+    pub auction_date_time: u64,
+    #[component(name = "bid-price")]
+    pub bid_price: u64,
+    #[component(name = "bid-date-time")]
+    pub bid_date_time: u64,
+}
