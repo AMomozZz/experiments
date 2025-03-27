@@ -52,11 +52,17 @@ pub struct Window<'a, T> {
     data: &'a VecDeque<T>,
 }
 
-impl<'a, T> Window<'a, T> {
+impl<'a, T: std::clone::Clone + std::fmt::Debug> Window<'a, T> {
     fn new(data: &'a VecDeque<T>) -> Self {
         Self { data }
     }
     pub fn iter(&self) -> std::collections::vec_deque::Iter<'a, T> {
         self.data.iter()
+    }
+
+    pub fn to_vec(&self) -> Vec<T> {
+        let (t_slice, _a_slice) = self.data.as_slices();
+        let re = t_slice.to_vec();
+        re
     }
 }

@@ -80,7 +80,8 @@ pub fn run_opt(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
 
 pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, wasm_func: WasmFunction<(Vec<Bid>,), (QwOutput,)>) {
     bids.count_sliding_holistic_window(ctx, size, step, move |data| {
-        wasm_func.call((data.iter().cloned().collect::<Vec<Bid>>(),)).0
+        // wasm_func.call((data.iter().cloned().collect::<Vec<Bid>>(),)).0
+        wasm_func.call((data.to_vec(),)).0
     })
     .drain(ctx);
 }
