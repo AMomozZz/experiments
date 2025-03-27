@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid, QwOutput};
+use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid, QwOutput, QwBid};
 use exports::pkg::component::u64_compare::Guest as U64CompareGuest;
 use crate::pkg::component::data_type::Value;
 
@@ -122,7 +122,7 @@ impl NexmarkGuest for Component {
     }
     
     #[doc = " test-func: func(v: stream<bid>) -> bool;"]
-    fn qw(v: Vec<Bid>,) -> QwOutput {
+    fn qw(v: Vec<QwBid>,) -> QwOutput {
         let mut sum = 0;
         let mut count = 0;
         let mut min = u64::MAX;

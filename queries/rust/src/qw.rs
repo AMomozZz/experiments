@@ -1,6 +1,6 @@
 use runtime::prelude::*;
 
-use crate::{data::{Bid, QwOutput}, WasmFunction};
+use crate::{data::{Bid, QwOutput, QwPrunedBid}, WasmFunction};
 
 #[data]
 pub struct Partial {
@@ -78,7 +78,10 @@ pub fn run_opt(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
     .drain(ctx);
 }
 
-pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, wasm_func: WasmFunction<(Vec<Bid>,), (QwOutput,)>) {
+pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, wasm_func: WasmFunction<(Vec<QwPrunedBid>,), (QwOutput,)>) {
+    let bids = bids.map(ctx, |a| {
+        QwPrunedBid::new(a.price)
+    });
     bids.count_sliding_holistic_window(ctx, size, step, move |data| {
         // wasm_func.call((data.iter().cloned().collect::<Vec<Bid>>(),)).0
         wasm_func.call((data.to_vec(),)).0

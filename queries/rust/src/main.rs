@@ -19,6 +19,7 @@ use data::CompareOpV;
 use data::Q6JoinOutput;
 use data::Q7PrunedBid;
 use data::QwOutput;
+use data::QwPrunedBid;
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
@@ -159,7 +160,7 @@ fn main() {
     let wasm_func_q6_multi_compare = get_wasm_func::<(Vec<CompareOpV>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q6-multi-comparison-v");
     let wasm_func_q6_avg = get_wasm_func::<(Vec<Q6JoinOutput>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q6-avg");
     let wasm_func_q7 = get_wasm_func::<(Vec<Q7PrunedBid>, ), (Q7PrunedBid,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q7");
-    let wasm_func_qw = get_wasm_func::<(Vec<Bid>, ), (QwOutput,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "qw");
+    let wasm_func_qw = get_wasm_func::<(Vec<QwPrunedBid>, ), (QwOutput,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "qw");
 
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
