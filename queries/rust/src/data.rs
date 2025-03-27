@@ -157,3 +157,13 @@ pub struct Q7PrunedBid {
     pub price: u64,
     pub bidder: u64,
 }
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+#[serde(crate = "runtime::prelude::serde")]
+#[component(record)]
+pub struct QwOutput {
+    pub mean: f64,
+    pub stddev: f64,
+    pub min: u64,
+    pub max: u64,
+}

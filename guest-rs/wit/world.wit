@@ -110,12 +110,25 @@ interface q7-records {
     }
 }
 
+interface qw-records {
+    record qw-output {
+        mean: f64,
+        stddev: f64,
+        min: u64,
+        max: u64,
+    }
+    // resource qw-output {
+    //     constructor(mean: f64, stddev: f64, min: u64, max: u64);
+    // }
+}
+
 interface nexmark {
     use data-type.{bid, auction, compare-op-v, value};
     use q4-records.{q4-auction, q4-bid};
     use q5-records.{q5-bid};
     use q6-records.{q6-join-output};
     use q7-records.{q7-bid};
+    use qw-records.{qw-output};
     //convert-currency
     // q1: func(bid: bid) -> bid;
     q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
@@ -164,6 +177,10 @@ interface nexmark {
 
     //q7
     q7: func(v: list<q7-bid>) -> q7-bid;
+
+    // test-func: func(v: stream<bid>) -> bool;
+
+    qw: func(v: list<bid>) -> qw-output;
 }
 
 world component {

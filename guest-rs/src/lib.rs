@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid};
+use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid, QwOutput};
 use exports::pkg::component::u64_compare::Guest as U64CompareGuest;
 use crate::pkg::component::data_type::Value;
 
@@ -119,6 +119,30 @@ impl NexmarkGuest for Component {
     #[doc = "q7"]
     fn q7(v: Vec<Q7Bid>) -> Q7Bid {
         *v.iter().max_by_key(|b| b.price).unwrap()
+    }
+    
+    #[doc = " test-func: func(v: stream<bid>) -> bool;"]
+    fn qw(v: Vec<Bid>,) -> QwOutput {
+        let mut sum = 0;
+        let mut count = 0;
+        let mut min = u64::MAX;
+        let mut max = u64::MIN;
+        for bid in v.iter() {
+            sum += bid.price;
+            count += 1;
+            min = min.min(bid.price);
+            max = max.max(bid.price);
+        }
+        let mean = sum as f64 / count as f64;
+
+        let mut sum_sq_diff = 0.0;
+        for bid in v.iter() {
+            let diff = bid.price as f64 - mean;
+            sum_sq_diff += diff * diff;
+        }
+        let variance = sum_sq_diff / count as f64;
+        let stddev = variance.sqrt();
+        QwOutput {mean, stddev, max, min}
     }
 }
 

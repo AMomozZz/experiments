@@ -47,6 +47,7 @@ impl<T: Data> Stream<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct Window<'a, T> {
     data: &'a VecDeque<T>,
 }

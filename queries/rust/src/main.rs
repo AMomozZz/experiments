@@ -18,6 +18,7 @@ use std::rc::Rc;
 use data::CompareOpV;
 use data::Q6JoinOutput;
 use data::Q7PrunedBid;
+use data::QwOutput;
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
@@ -158,6 +159,7 @@ fn main() {
     let wasm_func_q6_multi_compare = get_wasm_func::<(Vec<CompareOpV>, ), (bool,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q6-multi-comparison-v");
     let wasm_func_q6_avg = get_wasm_func::<(Vec<Q6JoinOutput>, ), (u64,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q6-avg");
     let wasm_func_q7 = get_wasm_func::<(Vec<Q7PrunedBid>, ), (Q7PrunedBid,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "q7");
+    let wasm_func_qw = get_wasm_func::<(Vec<Bid>, ), (QwOutput,)>(&linker, &component, &store_wrapper, "pkg:component/nexmark", "qw");
 
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
@@ -216,7 +218,11 @@ fn main() {
         "q6-wasm" => timed(move |ctx| q6::run_wasm(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_q6_multi_compare, wasm_func_q6_avg)),
         "q6-wasm-ng" => timed(move |ctx| q6::run_wasm_ng(stream(ctx, auctions), stream(ctx, bids), ctx, wasm_func_u64_compare_lt_m, wasm_func_q6_avg)),
         "q7-wasm" => timed(move |ctx| q7::run_wasm(stream(ctx, bids), ctx, wasm_func_q7)),
-
+        "qw-wasm" => {
+            let size = args.next().unwrap().parse().unwrap();
+            let step = args.next().unwrap().parse().unwrap();
+            timed(move |ctx| qw::run_wasm(stream(ctx, bids), size, step, ctx, wasm_func_qw))
+        },
 
         // io
         "io" => {

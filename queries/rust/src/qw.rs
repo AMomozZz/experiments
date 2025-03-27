@@ -1,14 +1,6 @@
 use runtime::prelude::*;
 
-use crate::data::Bid;
-
-#[data]
-pub struct Output {
-    pub mean: f64,
-    pub stddev: f64,
-    pub min: u64,
-    pub max: u64,
-}
+use crate::{data::{Bid, QwOutput}, WasmFunction};
 
 #[data]
 pub struct Partial {
@@ -38,21 +30,22 @@ impl Partial {
         )
     }
 
-    pub fn lower(&self) -> Output {
+    pub fn lower(&self) -> QwOutput {
         let mean = self.sum as f64 / self.count as f64;
         let variance = (self.sum_sq as f64 / self.count as f64) - (mean * mean);
         let stddev = variance.sqrt();
-        Output::new(mean, stddev, self.max, self.min)
+        QwOutput::new(mean, stddev, self.max, self.min)
     }
 }
 
 pub fn run(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
     bids.count_sliding_holistic_window(ctx, size, step, |data| {
+        let data = data.iter().cloned().collect::<Vec<Bid>>();
         let mut sum = 0;
         let mut count = 0;
         let mut min = u64::MAX;
         let mut max = u64::MIN;
-        for bid in data.iter() {
+        for bid in &data {
             sum += bid.price;
             count += 1;
             min = min.min(bid.price);
@@ -61,13 +54,13 @@ pub fn run(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
         let mean = sum as f64 / count as f64;
 
         let mut sum_sq_diff = 0.0;
-        for bid in data.iter() {
+        for bid in &data {
             let diff = bid.price as f64 - mean;
             sum_sq_diff += diff * diff;
         }
         let variance = sum_sq_diff / count as f64;
         let stddev = variance.sqrt();
-        Output::new(mean, stddev, max, min)
+        QwOutput::new(mean, stddev, max, min)
     })
     .drain(ctx);
 }
@@ -82,5 +75,12 @@ pub fn run_opt(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
         Partial::combine,
         Partial::lower,
     )
+    .drain(ctx);
+}
+
+pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, wasm_func: WasmFunction<(Vec<Bid>,), (QwOutput,)>) {
+    bids.count_sliding_holistic_window(ctx, size, step, move |data| {
+        wasm_func.call((data.iter().cloned().collect::<Vec<Bid>>(),)).0
+    })
     .drain(ctx);
 }
