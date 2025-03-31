@@ -1355,7 +1355,7 @@ pub mod exports {
                     fn q6_avg(v: _rt::Vec<Q6JoinOutput>) -> u64;
                     /// q7
                     fn q7(v: _rt::Vec<Q7Bid>) -> Q7Bid;
-                    /// test-func: func(v: stream<bid>) -> bool;
+                    /// test-func: func(bids: stream<bid>) -> bool;
                     fn qw(v: _rt::Vec<QwBid>) -> QwOutput;
                 }
                 #[doc(hidden)]

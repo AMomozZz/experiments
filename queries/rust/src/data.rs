@@ -1,8 +1,6 @@
 use runtime::prelude::*;
 use wasmtime::component::{ComponentType, Lift, Lower};
 
-// use crate::WasmFunction;
-
 #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
 #[serde(crate = "runtime::prelude::serde")]
 #[component(record)]
@@ -56,13 +54,7 @@ pub struct Bid {
     pub extra: String,
 }
 
-// #[data]
-// pub struct MyComponent<I:std::fmt::Debug, O:std::fmt::Debug> {
-//     component: WasmFunction<I, O>,
-//     #[timestamp]
-//     date_time: u64,
-// }
-
+// pruned data
 #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
 #[serde(crate = "runtime::prelude::serde")]
 #[component(record)]
