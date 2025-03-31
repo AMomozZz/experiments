@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc, fmt::Debug};
 
 use runtime::prelude::*;
-use wasmtime::{component::{Component, Linker, TypedFunc}, Store};
+use wasmtime::{component::{Component, Linker, TypedFunc}, Engine, Store};
 use wasmtime_wasi::{ResourceTable, WasiImpl};
 
 // host
@@ -30,19 +30,13 @@ pub struct Host {
         }
     }
 
-// #[derive(Debug, Clone, Send, Timestamp, New)]
-// pub struct Component<'a> {
-//     component: &'a [u8],
-//     #[timestamp]
-//     date_time: u64,
-// }
-
 #[derive(Clone, Send, Sync, Timestamp)]
 pub struct WasmFunction<I, O> {
     // component: &'a [u8],
     store: Rc<RefCell<Store<WasiImpl<Host>>>>,
     func: TypedFunc<I, O>,
     linker: Linker<WasiImpl<Host>>,
+    engine: Engine,
     // #[timestamp]
     // date_time: u64,
 }
@@ -58,12 +52,14 @@ where
     I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList,
     O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList
 {
-    pub fn new(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
+    pub fn new(linker: &Linker<WasiImpl<Host>>, engine: &Engine, guest_wasi_module: &[u8], store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
+        let component = Component::from_binary(engine, guest_wasi_module).unwrap();
         let clone_store_wrapper = store_wrapper.clone();
         WasmFunction {
-            func: Self::_get_func_from_component(linker, component, &clone_store_wrapper, pkg_name, name),
+            func: Self::_get_func_from_component(linker, &component, &clone_store_wrapper, pkg_name, name),
             store: clone_store_wrapper,
             linker: linker.clone(),
+            engine: engine.clone(),
             // component,
             // date_time: todo!(),
         }
@@ -74,17 +70,21 @@ where
         result
     }
 
-    pub fn switch(&self, new_component: &Component, pkg_name: &str, name: &str) -> Self {
+    pub fn switch(&mut self, guest_wasi_module: &[u8], pkg_name: &str, name: &str) {
         // self.func = Self::_get_func_from_component(&self.linker, new_component, &self.store, pkg_name, name);
-        let clone_linker = self.linker.clone();
-        let clone_store_wrapper = self.store.clone();
-        WasmFunction {
-            func: Self::_get_func_from_component(&clone_linker, new_component, &clone_store_wrapper, pkg_name, name),
-            store: clone_store_wrapper,
-            linker: clone_linker,
-            // component: new_component,
-            // date_time: todo!(),
-        }
+        // let clone_engine = self.engine.clone();
+        // let clone_linker = self.linker.clone();
+        // let clone_store_wrapper = self.store.clone();
+
+        let component = Component::from_binary(&self.engine, guest_wasi_module).unwrap();
+        // WasmFunction {
+        self.func = Self::_get_func_from_component(&self.linker, &component, &self.store, pkg_name, name)//,
+        //     store: clone_store_wrapper,
+        //     linker: clone_linker,
+        //     engine: clone_engine,
+        //     // component: new_component,
+        //     // date_time: todo!(),
+        // }
     }
 
     fn _get_func_from_component(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> wasmtime::component::TypedFunc<I, O> {
