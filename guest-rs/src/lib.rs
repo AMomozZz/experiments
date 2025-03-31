@@ -144,6 +144,11 @@ impl NexmarkGuest for Component {
         let stddev = variance.sqrt();
         QwOutput {mean, stddev, max, min}
     }
+    
+    // fn test_func(bids: wit_bindgen::rt::async_support::StreamReader<Bid>,) -> bool {
+    //     bids.cancel();
+    //     true
+    // }
 }
 
 impl U64CompareGuest for Component {

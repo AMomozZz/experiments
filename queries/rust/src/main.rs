@@ -11,6 +11,7 @@ pub mod q8;
 pub mod qw;
 
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufRead;
 use std::rc::Rc;
@@ -74,6 +75,12 @@ pub struct WasmFunction<I, O> {
     func: TypedFunc<I, O>
 }
 
+impl<I, O> Debug for WasmFunction<I, O> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WasmFunction").finish()
+    }
+}
+
 impl<I, O> WasmFunction<I, O> 
 where 
     I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList,
@@ -128,7 +135,7 @@ fn main() {
 
     let config = Config::new();
     // config.async_support(true);
-    // config.cache_config_load();
+    // let config = config.cache_config_load("D:/master/thesis/aqualang/webassembly/experiments/queries/rust/Cargo.toml").unwrap();
     // config.enable_incremental_compilation();
     let engine = Engine::new(&config).unwrap();
     let host = Host::new();

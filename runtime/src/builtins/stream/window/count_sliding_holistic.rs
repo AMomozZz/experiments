@@ -61,8 +61,6 @@ impl<'a, T: std::clone::Clone + std::fmt::Debug> Window<'a, T> {
     }
 
     pub fn to_vec(&self) -> Vec<T> {
-        let (t_slice, _a_slice) = self.data.as_slices();
-        let re = t_slice.to_vec();
-        re
+        self.data.as_slices().0.to_vec()
     }
 }

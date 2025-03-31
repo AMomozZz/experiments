@@ -39,13 +39,16 @@ impl Partial {
 }
 
 pub fn run(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
+    let bids = bids.map(ctx, |a| {
+        QwPrunedBid::new(a.price)
+    });
     bids.count_sliding_holistic_window(ctx, size, step, |data| {
-        let data = data.iter().cloned().collect::<Vec<Bid>>();
+        // let data = data.iter().cloned().collect::<Vec<Bid>>();
         let mut sum = 0;
         let mut count = 0;
         let mut min = u64::MAX;
         let mut max = u64::MIN;
-        for bid in &data {
+        for bid in data.iter() {
             sum += bid.price;
             count += 1;
             min = min.min(bid.price);
@@ -54,7 +57,7 @@ pub fn run(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
         let mean = sum as f64 / count as f64;
 
         let mut sum_sq_diff = 0.0;
-        for bid in &data {
+        for bid in data.iter() {
             let diff = bid.price as f64 - mean;
             sum_sq_diff += diff * diff;
         }

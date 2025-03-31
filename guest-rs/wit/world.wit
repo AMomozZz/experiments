@@ -179,7 +179,7 @@ interface nexmark {
     //q7
     q7: func(v: list<q7-bid>) -> q7-bid;
 
-    // test-func: func(v: stream<bid>) -> bool;
+    // test-func: func(bids: stream<bid>) -> bool;
 
     qw: func(v: list<qw-bid>) -> qw-output;
 }
