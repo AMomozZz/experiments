@@ -1,7 +1,7 @@
 use runtime::prelude::*;
 use stream::Event;
 
-use crate::{data::{Bid, QwOutput, QwPrunedBid}, WasmFunction};
+use crate::{data::{Bid, QwOutput, QwPrunedBid, WasmComponent}, WasmFunction};
 
 // const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
 //     env!("CARGO_MANIFEST_DIR"),
@@ -101,7 +101,7 @@ pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, 
 
 pub fn run_wasm_operator(
     mut data: Stream<Bid>, 
-    mut components: Stream<Vec<u8>>, 
+    mut components: Stream<WasmComponent>, 
     ctx: &mut Context,
     empty_wasm_func: WasmFunction<(Bid,), (QwOutput,)> 
 ) {
@@ -112,10 +112,10 @@ pub fn run_wasm_operator(
             event = components.recv() => {
                 loop {
                     match event {
-                        Event::Data(_time, ref data) => {
+                        Event::Data(_time, ref wasm_component) => {
                             // update func
                             if let Some(ref mut f) = func {
-                                f.switch_default(&data);
+                                f.switch_default(&wasm_component.file);
                                 // tx.send(Event::Data(_time, O::new_empty())).await?;
                             }
                         },

@@ -54,6 +54,16 @@ pub struct Bid {
     pub extra: String,
 }
 
+// #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
+// #[serde(crate = "runtime::prelude::serde")]
+#[data]
+pub struct WasmComponent {
+    pub file: Vec<u8>,
+    #[timestamp]
+    pub date_time: u64,
+    pub extra: String,
+}
+
 // pruned data
 #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
 #[serde(crate = "runtime::prelude::serde")]

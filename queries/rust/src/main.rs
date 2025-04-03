@@ -22,6 +22,7 @@ use data::Q6JoinOutput;
 use data::Q7PrunedBid;
 use data::QwOutput;
 use data::QwPrunedBid;
+use data::WasmComponent;
 use runtime::prelude::formats::csv;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
@@ -59,7 +60,7 @@ fn main() {
     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
     let auctions = std::fs::File::open(&format!("{dir}/auctions.csv")).map(iter::<Auction>);
     let persons = std::fs::File::open(&format!("{dir}/persons.csv")).map(iter::<Person>);
-    let components = std::fs::File::open(&format!("{dir}/components.csv")).map(iter::<Vec<u8>>);
+    let components = std::fs::File::open(&format!("{dir}/components.csv")).map(iter::<WasmComponent>);
 
     let config = Config::new();
     // config.async_support(true);
@@ -160,8 +161,6 @@ fn main() {
             timed(move |ctx| qw::run_wasm(stream(ctx, bids), size, step, ctx, wasm_func_qw))
         },
         "qs-wasm" => {
-            let size = args.next().unwrap().parse().unwrap();
-            let step = args.next().unwrap().parse().unwrap();
             let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
             timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream(ctx, components), ctx, empty_wasm_func))
         },
