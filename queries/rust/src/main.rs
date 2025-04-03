@@ -59,6 +59,7 @@ fn main() {
     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
     let auctions = std::fs::File::open(&format!("{dir}/auctions.csv")).map(iter::<Auction>);
     let persons = std::fs::File::open(&format!("{dir}/persons.csv")).map(iter::<Person>);
+    let components = std::fs::File::open(&format!("{dir}/components.csv")).map(iter::<Vec<u8>>);
 
     let config = Config::new();
     // config.async_support(true);
