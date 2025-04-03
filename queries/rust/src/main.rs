@@ -162,7 +162,8 @@ fn main() {
         "qs-wasm" => {
             let size = args.next().unwrap().parse().unwrap();
             let step = args.next().unwrap().parse().unwrap();
-            timed(move |ctx| qs::run_wasm(stream(ctx, bids), size, step, ctx, wasm_func_qw))
+            let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
+            timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream(ctx, components), ctx, empty_wasm_func))
         },
 
         // io

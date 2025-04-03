@@ -1,11 +1,12 @@
 use runtime::prelude::*;
+use stream::Event;
 
 use crate::{data::{Bid, QwOutput, QwPrunedBid}, WasmFunction};
 
-const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../component.wasm"
-));
+// const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
+//     env!("CARGO_MANIFEST_DIR"),
+//     "/../../component.wasm"
+// ));
 
 #[data]
 pub struct Partial {
@@ -86,14 +87,69 @@ pub fn run_opt(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context) {
     .drain(ctx);
 }
 
-pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, mut wasm_func: WasmFunction<(Vec<QwPrunedBid>,), (QwOutput,)>) {
+pub fn run_wasm(bids: Stream<Bid>, size: usize, step: usize, ctx: &mut Context, wasm_func: WasmFunction<(Vec<QwPrunedBid>,), (QwOutput,)>) {
     let bids = bids.map(ctx, |a| {
         QwPrunedBid::new(a.price)
     });
-    wasm_func.switch(GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "qw");
+    // wasm_func.switch(GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "qw");
     bids.count_sliding_holistic_window(ctx, size, step, move |data| {
         // wasm_func.call((data.iter().cloned().collect::<Vec<Bid>>(),)).0
         wasm_func.call((data.to_vec(),)).0
+    })
+    .drain(ctx);
+}
+
+pub fn run_wasm_operator(
+    mut data: Stream<Bid>, 
+    mut components: Stream<Vec<u8>>, 
+    ctx: &mut Context,
+    empty_wasm_func: WasmFunction<(Bid,), (QwOutput,)> 
+) {
+    ctx.operator(move |tx: stream::Collector<QwOutput>| async move {
+        // initialise WASM
+        let mut func = Some(empty_wasm_func);
+        tokio::select! {
+            event = components.recv() => {
+                loop {
+                    match event {
+                        Event::Data(_time, ref data) => {
+                            // update func
+                            if let Some(ref mut f) = func {
+                                f.switch_default(&data);
+                                // tx.send(Event::Data(_time, O::new_empty())).await?;
+                            }
+                        },
+                        Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
+                        Event::Snapshot(id) => tx.send(Event::Snapshot(id)).await?,
+                        Event::Sentinel => {
+                            tx.send(Event::Sentinel).await?;
+                            break;
+                        },
+                    }
+                }
+            },
+            event = data.recv() => {
+                loop {
+                    match event {
+                        Event::Data(time, ref data) => {
+                            if let Some(ref mut f) = func {
+                                // Call the function with the data
+                                // f.call(data);
+                                tx.send(Event::Data(time, f.call((data.clone(),)).0)).await?
+                            }
+                        },
+                        Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
+                        Event::Snapshot(id) => tx.send(Event::Snapshot(id)).await?,
+                        Event::Sentinel => {
+                            tx.send(Event::Sentinel).await?;
+                            break;
+                        },
+                    }
+                }
+                
+            },
+        }
+        Ok(())
     })
     .drain(ctx);
 }
