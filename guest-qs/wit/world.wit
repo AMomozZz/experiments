@@ -41,6 +41,7 @@ interface data-type {
 
 interface nexmark {
     use data-type.{bid, auction};
+
     qs: func(bid: bid) -> option<bid>;
 }
 

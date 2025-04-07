@@ -15,8 +15,10 @@ pub mod qs;
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::BufRead;
+use std::io::BufReader;
 use std::rc::Rc;
 
+use ::csv::ReaderBuilder;
 use data::CompareOpV;
 use data::Q6JoinOutput;
 use data::Q7PrunedBid;
@@ -24,10 +26,14 @@ use data::QwOutput;
 use data::QwPrunedBid;
 use data::WasmComponent;
 use runtime::prelude::formats::csv;
+use runtime::prelude::serde::de::DeserializeOwned;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
 use wasm::Host;
 use wasm::WasmFunction;
+
+use std::io::Result;
+use std::path::Path;
 
 use crate::data::Auction;
 use crate::data::Bid;
@@ -60,7 +66,7 @@ fn main() {
     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
     let auctions = std::fs::File::open(&format!("{dir}/auctions.csv")).map(iter::<Auction>);
     let persons = std::fs::File::open(&format!("{dir}/persons.csv")).map(iter::<Person>);
-    let components = std::fs::File::open(&format!("{dir}/components.csv")).map(iter::<WasmComponent>);
+    let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
 
     let config = Config::new();
     // config.async_support(true);
@@ -162,7 +168,7 @@ fn main() {
         },
         "qs-wasm" => {
             let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
-            timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream(ctx, components), ctx, empty_wasm_func))
+            timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream(ctx, components_bids), ctx, empty_wasm_func))
         },
 
         // io
@@ -184,24 +190,21 @@ fn main() {
 }
 
 // Buffered CSV reader
-fn iter<T: Data>(file: File) -> impl Iterator<Item = T> {
-    let mut bufreader = std::io::BufReader::new(file);
-    let mut buf = std::vec::Vec::new();
-    let mut reader = csv::de::Reader::<1024>::new(',');
-    std::iter::from_fn(move || match bufreader.read_until(b'\n', &mut buf) {
-        Ok(0) => None,
-        Ok(n) => {
-            let mut de = csv::de::Deserializer::new(&mut reader, &buf[0..n]);
-            match T::deserialize(&mut de) {
-                Ok(data) => {
-                    buf.clear();
-                    Some(data)
-                }
-                Err(e) => panic!("Failed to deserialize: {}", e),
+fn iter<T: Data + DeserializeOwned + 'static>(file: File) -> impl Iterator<Item = T> {
+    let reader = BufReader::new(file);
+    let csv_reader = ReaderBuilder::new()
+        .has_headers(false)
+        .flexible(true)
+        .from_reader(reader);
+
+    csv_reader
+        .into_deserialize::<T>() 
+        .map(|result| match result {
+            Ok(data) => data,
+            Err(e) => {
+                panic!("CSV deserialization failed: {:?}", e);
             }
-        }
-        Err(e) => panic!("Failed to read from stdin: {}", e),
-    })
+        })
 }
 
 // Stream from iterator

@@ -22,6 +22,7 @@ cd root/
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --dir nexmark-data/bid
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --auctions --persons --dir nexmark-data/auctionPerson
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --auctions --bids --dir nexmark-data/auctionBid
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --dir nexmark-data/bidComponent
 ```
 
 ```bash

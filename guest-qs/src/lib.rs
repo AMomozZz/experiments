@@ -10,10 +10,6 @@ export!(Component);
 
 impl NexmarkGuest for Component {
     fn qs(bid: Bid,) -> Option<Bid> {
-        let filters = vec![1007, 1020, 2001, 2019, 2087];
-        match filters.contains(&bid.auction) {
-            true => Some(bid),
-            false => None,
-        }
+        Some(Bid {auction: bid.auction, price: bid.price * 100 / 85, bidder: bid.bidder, date_time: bid.date_time, channel: bid.channel, url: bid.url, extra: bid.extra })
     }
 }

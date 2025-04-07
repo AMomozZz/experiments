@@ -50,7 +50,11 @@ pub struct WasmFunction<I, O> {
 
 impl<I, O> Debug for WasmFunction<I, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("WasmFunction").finish()
+        f.debug_struct("WasmFunction")
+        .field("func", &self.func.iter().len())
+        .field("pkg_name", &self.pkg_name)
+        .field("name", &self.name)
+        .finish()
     }
 }
 
@@ -98,7 +102,7 @@ where
                 f.post_return(&mut *self.store.borrow_mut()).unwrap();
                 result
             },
-            None => panic!("Function not found"),
+            None => panic!("Function not found: {:?}", self),
         }
     }
 
@@ -106,12 +110,12 @@ where
         // let default_pkg_name = self.pkg_name.clone();
         let default_pkg_name = match self.pkg_name {
             Some(ref pkg_name) => pkg_name.clone(),
-            None => panic!("Default package name not found"),
+            None => panic!("Default package name not found: {:?}", self),
         };
         // let default_name = self.name.clone();
         let default_name = match self.name {
             Some(ref name) => name.clone(),
-            None => panic!("Default function name not found"),
+            None => panic!("Default function name not found: {:?}", self),
         };
         self.switch(guest_wasi_module, default_pkg_name.as_str(), default_name.as_str());
     }
