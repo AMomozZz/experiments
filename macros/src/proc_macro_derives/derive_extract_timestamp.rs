@@ -20,7 +20,7 @@ pub(crate) fn derive_extract_timestamp(input: syn::DeriveInput) -> TokenStream {
             impl #impl_generics ::runtime::traits::Timestamp for #name #type_generics #where_clause {
                 #[inline(always)]
                 fn timestamp(&self) -> Time {
-                    Time::from_milliseconds(self.#field_name as i128)
+                    Time::from_seconds(self.#field_name as i64)
                 }
             }
         }
