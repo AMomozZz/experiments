@@ -178,6 +178,9 @@ fn main() {
                 if auctions.is_ok() {
                     stream(ctx, auctions).drain(ctx);
                 }
+                if components_bids.is_ok() {
+                    stream(ctx, components_bids).drain(ctx);
+                }
             });
         },
         _ => panic!("unknown query"),
@@ -194,8 +197,10 @@ fn iter<T: Data + DeserializeOwned + 'static>(file: File) -> impl Iterator<Item 
 
     csv_reader
         .into_deserialize::<T>() 
-        .map(|result| match result {
-            Ok(data) => data,
+        .map(move |result| match result {
+            Ok(data) => {
+                data
+            },
             Err(e) => {
                 panic!("CSV deserialization failed: {:?}", e);
             }

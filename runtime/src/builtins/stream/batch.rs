@@ -29,11 +29,11 @@ impl<T: Data> Stream<T> {
                 if time > latest_time {
                     latest_time = time;
                 }
+                tx.send(Event::Data(time, v)).await?;
                 if i % watermark_frequency == 0 {
                     watermark = latest_time - slack;
                     tx.send(Event::Watermark(watermark)).await?;
                 }
-                tx.send(Event::Data(time, v)).await?;
             }
             tx.send(Event::Sentinel).await
         })
