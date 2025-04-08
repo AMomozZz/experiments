@@ -26,10 +26,8 @@ pub fn run_wasm_operator(
                         Event::Data(_time, ref wasm_component) => {
                             func.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name);
                         },
-                        // Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
+                        Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
                         _ => {},
-                        // Event::Snapshot(id) => tx.send(Event::Snapshot(id)).await?,
-                        // Event::Sentinel => tx.send(Event::Sentinel).await?,
                     }
                 },
                 event = data.recv() => {

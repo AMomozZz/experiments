@@ -163,7 +163,7 @@ fn main() {
         },
         "qs-wasm" => {
             let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
-            timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream(ctx, components_bids), ctx, empty_wasm_func))
+            timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, empty_wasm_func))
         },
 
         // io
@@ -208,9 +208,17 @@ fn iter<T: Data + DeserializeOwned + 'static>(file: File) -> impl Iterator<Item 
 }
 
 // Stream from iterator
+fn stream_with<T: Data + Timestamp>(
+    ctx: &mut Context,
+    iter: std::io::Result<impl Iterator<Item = T> + Send + 'static>,
+    frequency: usize,
+) -> Stream<T> {
+    Stream::from_iter(ctx, iter.unwrap(), T::timestamp, frequency, SLACK)
+}
+
 fn stream<T: Data + Timestamp>(
     ctx: &mut Context,
     iter: std::io::Result<impl Iterator<Item = T> + Send + 'static>,
 ) -> Stream<T> {
-    Stream::from_iter(ctx, iter.unwrap(), T::timestamp, WATERMARK_FREQUENCY, SLACK)
+    stream_with(ctx, iter, WATERMARK_FREQUENCY)
 }
