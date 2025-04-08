@@ -14,7 +14,6 @@ pub mod qs;
 
 use std::cell::RefCell;
 use std::fs::File;
-use std::io::BufRead;
 use std::io::BufReader;
 use std::rc::Rc;
 
@@ -25,15 +24,11 @@ use data::Q7PrunedBid;
 use data::QwOutput;
 use data::QwPrunedBid;
 use data::WasmComponent;
-use runtime::prelude::formats::csv;
 use runtime::prelude::serde::de::DeserializeOwned;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;
 use wasm::Host;
 use wasm::WasmFunction;
-
-use std::io::Result;
-use std::path::Path;
 
 use crate::data::Auction;
 use crate::data::Bid;
