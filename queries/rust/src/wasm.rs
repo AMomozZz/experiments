@@ -95,6 +95,10 @@ where
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.func.is_none()
+    }
+
     pub fn call(&self, input: I) -> O {
         match self.func {
             Some(f) => {

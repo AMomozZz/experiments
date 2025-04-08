@@ -16,7 +16,7 @@ pub fn run_wasm_operator(
 ) {
     ctx.operator(move |tx| async move {
         // initialise WASM
-        let mut func = Some(empty_wasm_func);
+        let mut func = empty_wasm_func;
         // match components.recv().await {
         //     Event::Data(_time, ref wasm_component) => {
         //         // update func
@@ -40,10 +40,11 @@ pub fn run_wasm_operator(
                         match event {
                             Event::Data(_time, ref wasm_component) => {
                                 // update func
-                                if let Some(ref mut f) = func {
-                                    f.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name);
-                                    // tx.send(Event::Data(_time, O::new_empty())).await?;
-                                }
+                                // match func.is_empty() {
+                                //     true => func.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name),
+                                //     false => 
+                                // } 
+                                func.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name);
                             },
                             Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
                             Event::Snapshot(id) => tx.send(Event::Snapshot(id)).await?,
@@ -58,10 +59,12 @@ pub fn run_wasm_operator(
                     // loop {
                         match event {
                             Event::Data(time, ref data) => {
-                                if let Some(ref mut f) = func {
-                                    // Call the function with the data
-                                    // f.call(data);
-                                    tx.send(Event::Data(time, f.call((data.clone(),)).0)).await?
+                                match func.is_empty() {
+                                    false => tx.send(Event::Data(time, func.call((data.clone(),)).0)).await?,
+                                    true => {
+                                        eprintln!("{}", data.date_time);
+                                        tx.send(Event::Data(time, None)).await?
+                                    },
                                 }
                             },
                             Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
