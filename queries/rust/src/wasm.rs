@@ -1,9 +1,13 @@
 use std::{cell::RefCell, rc::Rc, fmt::Debug};
 
+// use runtime::prelude::stream::Event;
 use runtime::prelude::*;
-use wasmtime::{component::{Component, Linker, TypedFunc}, Engine, Store};
+use wasmtime::{component::{Component, Linker, TypedFunc}, Engine as WasmEngine, Store};
 use wasmtime_wasi::{ResourceTable, WasiImpl};
+use base64::{engine::general_purpose::STANDARD, Engine};
+use runtime::prelude::serde::Deserialize;
 
+// use crate::either::Either;
 
 // host
 pub struct Host {
@@ -33,20 +37,13 @@ pub struct Host {
 
 #[derive(Clone, Send, Sync, Timestamp)]
 pub struct WasmFunction<I, O> {
-    // component: &'a [u8],
     store: Rc<RefCell<Store<WasiImpl<Host>>>>,
     func: Option<TypedFunc<I, O>>,
     linker: Linker<WasiImpl<Host>>,
-    engine: Engine,
+    engine: WasmEngine,
     pkg_name: Option<String>,
     name: Option<String>,
-    // #[timestamp]
-    // date_time: u64,
 }
-
-// trait EmptyNew {
-//     fn new_empty() -> Self;
-// }
 
 impl<I, O> Debug for WasmFunction<I, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -63,7 +60,7 @@ where
     I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList,
     O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList,
 {
-    pub fn new(linker: &Linker<WasiImpl<Host>>, engine: &Engine, guest_wasi_module: &[u8], store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
+    pub fn new(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, guest_wasi_module: &[u8], store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
         // eprintln!("{}", guest_wasi_module.len()); // 92192
         let component = Component::from_binary(engine, guest_wasi_module).unwrap();
         // let a = component.serialize().unwrap();
@@ -76,12 +73,10 @@ where
             engine: engine.clone(),
             pkg_name: Some(pkg_name.to_string()),
             name: Some(name.to_string()),
-            // component,
-            // date_time: todo!(),
         }
     }
 
-    pub fn new_empty(linker: &Linker<WasiImpl<Host>>, engine: &Engine, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>) -> Self {
+    pub fn new_empty(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>) -> Self {
         let clone_store_wrapper = store_wrapper.clone();
         WasmFunction {
             func: None,
@@ -90,8 +85,6 @@ where
             engine: engine.clone(),
             pkg_name: None,
             name: None,
-            // component,
-            // date_time: todo!(),
         }
     }
 
@@ -111,12 +104,10 @@ where
     }
 
     pub fn switch_default(&mut self, guest_wasi_module: &[u8]) {
-        // let default_pkg_name = self.pkg_name.clone();
         let default_pkg_name = match self.pkg_name {
             Some(ref pkg_name) => pkg_name.clone(),
             None => panic!("Default package name not found: {:?}", self),
         };
-        // let default_name = self.name.clone();
         let default_name = match self.name {
             Some(ref name) => name.clone(),
             None => panic!("Default function name not found: {:?}", self),
@@ -125,20 +116,8 @@ where
     }
 
     pub fn switch(&mut self, guest_wasi_module: &[u8], pkg_name: &str, name: &str) {
-        // self.func = Self::_get_func_from_component(&self.linker, new_component, &self.store, pkg_name, name);
-        // let clone_engine = self.engine.clone();
-        // let clone_linker = self.linker.clone();
-        // let clone_store_wrapper = self.store.clone();
-
         let component = Component::from_binary(&self.engine, guest_wasi_module).unwrap();
-        // WasmFunction {
-        self.func = Some(Self::_get_func_from_component(&self.linker, &component, &self.store, pkg_name, name))//,
-        //     store: clone_store_wrapper,
-        //     linker: clone_linker,
-        //     engine: clone_engine,
-        //     // component: new_component,
-        //     // date_time: todo!(),
-        // }
+        self.func = Some(Self::_get_func_from_component(&self.linker, &component, &self.store, pkg_name, name))
     }
 
     fn _get_func_from_component(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> wasmtime::component::TypedFunc<I, O> {
@@ -154,4 +133,75 @@ where
             .get_typed_func::<I, O>(&mut *store, func_export)
             .unwrap()
     }
+
+    // pub fn run_wasm_operator(
+    //     self,
+    //     datas: Stream<I>, 
+    //     components: Stream<WasmComponent>, 
+    //     ctx: &mut Context,
+    // ) {
+    //     let datas_source = datas.map(ctx, |bid| Either::Bid(data));
+    //     let components_source = components.map(ctx, |component| Either::Component(component));
+    
+    //     let mut input = data_source.merge(ctx, components_source).sorted(ctx);
+    
+    //     ctx.operator(move |tx| async move {
+    //         let mut func = self.func.unwrap();
+    //         loop {
+    //             match input.recv().await {
+    //                 Event::Data(time, ref either) => {
+    //                     match either {
+    //                         Either::Bid(bid) => {
+    //                             match func.is_empty() {
+    //                                 false => tx.send(Event::Data(time, func.call((bid.clone(),)).0)).await?,
+    //                                 true => tx.send(Event::Data(time, None)).await?,
+    //                             }
+    //                         },
+    //                         Either::Component(wasm_component) => {
+    //                             func.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name);
+    //                         },
+    //                         Either::Auction(_auction) => todo!(),
+    //                         Either::Person(_person) => todo!(),
+    //                     }
+    //                 },
+    //                 Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
+    //                 Event::Snapshot(id) => tx.send(Event::Snapshot(id)).await?,
+    //                 Event::Sentinel => {
+    //                     tx.send(Event::Sentinel).await?;
+    //                     break;
+    //                 },
+    //             }
+    //         }
+    //         Ok(())
+    //     })
+    //     .drain(ctx);
+    // }
+}
+
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New)]
+#[serde(crate = "runtime::prelude::serde")]
+pub struct WasmComponent {
+    #[serde(serialize_with = "serialize_vec_u8", deserialize_with = "deserialize_vec_u8")]
+    pub file: Vec<u8>,
+    pub pkg_name: String,
+    pub name: String,
+    #[timestamp]
+    pub date_time: u64,
+    pub extra: String,
+}
+
+fn serialize_vec_u8<S>(vec: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let encoded = STANDARD.encode(vec);
+    serializer.serialize_str(&encoded)
+}
+
+fn deserialize_vec_u8<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let encoded: String = Deserialize::deserialize(deserializer)?;
+    STANDARD.decode(&encoded).map_err(serde::de::Error::custom)
 }
