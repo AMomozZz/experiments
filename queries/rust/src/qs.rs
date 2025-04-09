@@ -1,7 +1,7 @@
 use runtime::prelude::*;
 use stream::Event;
 
-use crate::{data::{Bid, WasmComponent}, either::{Either, EitherData}, WasmFunction};
+use crate::{data::Bid, either::{Either, EitherData}, wasm::{WasmComponent, WasmFunction}};
 
 pub fn run_wasm_operator(
     data: Stream<Bid>, 
@@ -20,17 +20,9 @@ pub fn run_wasm_operator(
             match input.recv().await {
                 Event::Data(time, ref either) => {
                     match either {
-                        // Either::Bid(bid) => {
-                        //     match func.is_empty() {
-                        //         false => tx.send(Event::Data(time, func.call((bid.clone(),)).0)).await?,
-                        //         true => tx.send(Event::Data(time, None)).await?,
-                        //     }
-                        // },
                         Either::Component(wasm_component) => {
                             func.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name);
                         },
-                        // Either::Auction(_auction) => todo!(),
-                        // Either::Person(_person) => todo!(),
                         Either::Data(data) => {
                             match data {
                                 EitherData::Auction(_auction) => todo!(),

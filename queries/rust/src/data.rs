@@ -1,5 +1,4 @@
-use base64::{engine::general_purpose::STANDARD, Engine};
-use runtime::prelude::{serde::Deserialize, *};
+use runtime::prelude::*;
 use wasmtime::component::{ComponentType, Lift, Lower};
 
 #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New, ComponentType, Lower, Lift)]
@@ -53,34 +52,6 @@ pub struct Bid {
     #[component(name = "date-time")]
     pub date_time: u64,
     pub extra: String,
-}
-
-#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New)]
-#[serde(crate = "runtime::prelude::serde")]
-pub struct WasmComponent {
-    #[serde(serialize_with = "serialize_vec_u8", deserialize_with = "deserialize_vec_u8")]
-    pub file: Vec<u8>,
-    pub pkg_name: String,
-    pub name: String,
-    #[timestamp]
-    pub date_time: u64,
-    pub extra: String,
-}
-
-fn serialize_vec_u8<S>(vec: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    let encoded = STANDARD.encode(vec);
-    serializer.serialize_str(&encoded)
-}
-
-fn deserialize_vec_u8<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let encoded: String = Deserialize::deserialize(deserializer)?;
-    STANDARD.decode(&encoded).map_err(serde::de::Error::custom)
 }
 
 // pruned data

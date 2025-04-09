@@ -24,7 +24,7 @@ use data::Q6JoinOutput;
 use data::Q7PrunedBid;
 use data::QwOutput;
 use data::QwPrunedBid;
-use data::WasmComponent;
+use crate::wasm::WasmComponent;
 use runtime::prelude::serde::de::DeserializeOwned;
 use runtime::prelude::*;
 use runtime::traits::Timestamp;

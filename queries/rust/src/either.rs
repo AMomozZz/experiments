@@ -1,8 +1,9 @@
-use runtime::prelude::serde::{Serialize, Deserialize};
+use runtime::prelude::*;
+use wasmtime::component::{ComponentType, Lift, Lower};
 
-use crate::data::{Auction, Bid, Person, WasmComponent};
+use crate::{data::{Auction, Bid, Person}, wasm::WasmComponent};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(crate = "runtime::prelude::serde")]
 pub enum Either {
     Component(WasmComponent),
@@ -13,8 +14,9 @@ pub enum Either {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, ComponentType, Lower, Lift)]
 #[serde(crate = "runtime::prelude::serde")]
+#[component(variant)]
 pub enum EitherData {
     Bid(Bid),
     Auction(Auction),
