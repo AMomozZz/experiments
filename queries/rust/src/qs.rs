@@ -1,15 +1,18 @@
 use runtime::prelude::*;
 use stream::Event;
 
-use crate::{data::{Bid, WasmComponent}, WasmFunction};
+use crate::{data::{Bid, WasmComponent}, either::Either, WasmFunction};
 
-// pub fn merge_and_sort_operator(
-//     mut data: Stream<Bid>, 
-//     mut components: Stream<WasmComponent>, 
-//     ctx: &mut Context,
-// ) {
+pub fn merge_and_sort(
+    data: Stream<Bid>, 
+    components: Stream<WasmComponent>, 
+    ctx: &mut Context,
+) -> Stream<Either> {
+    let data_source = data.map(ctx, |bid| Either::Bid(bid));
+    let components_source = components.map(ctx, |component| Either::Component(component));
 
-// }
+    data_source.merge(ctx, components_source).sorted(ctx)
+}
 
 pub fn run_wasm_operator(
     mut data: Stream<Bid>, 
