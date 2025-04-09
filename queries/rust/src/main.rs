@@ -1,5 +1,6 @@
 pub mod data;
 pub mod wasm;
+pub mod either;
 
 pub mod q1;
 pub mod q2;
