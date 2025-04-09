@@ -23,6 +23,7 @@ pub mod source;
 pub mod take;
 pub mod window;
 pub mod collect;
+pub mod sort;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Event<T> {
