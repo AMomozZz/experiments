@@ -80,6 +80,10 @@ struct Args {
     components: bool,
     #[clap(long, default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/components/"))]
     wasm_dir: PathBuf,
+    #[clap(long, default_value = "pkg:component/nexmark")]
+    pkg_name: String,
+    #[clap(long, default_value = "qs")]
+    name: String,
     #[clap(long, default_value = ".")]
     dir: PathBuf,
 }
@@ -186,9 +190,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             } else {
                 let mut rng = rand::rng();
                 match wasm_files.choose(&mut rng) {
-                    Some(random_file) => WasmComponent::new(e, &random_file, "pkg:component/nexmark", "qs"),
+                    Some(random_file) => WasmComponent::new(e, &random_file, &args.pkg_name, &args.name),
                     None => {
-                        unreachable!("no random.wasm");
+                        unreachable!("no random .wasm");
                     },
                 }
             }
