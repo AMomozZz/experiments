@@ -37,11 +37,18 @@ interface data-type {
         date-time: u64,
         extra: string,
     }
+
+    variant either-data {
+        bid(bid),
+        auction(auction),
+        person(person),
+    }
 }
 
 interface nexmark {
-    use data-type.{bid, auction};
+    use data-type.{bid, auction, either-data};
     qs: func(bid: bid) -> option<bid>;
+    qs-g: func(data: either-data) -> option<either-data>;
 }
 
 world component {

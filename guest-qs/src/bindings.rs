@@ -12,6 +12,38 @@ pub mod pkg {
             static __FORCE_SECTION_REF: fn() = super::super::super::__link_custom_section_describing_imports;
             use super::super::super::_rt;
             #[derive(Clone)]
+            pub struct Auction {
+                pub id: u64,
+                pub item_name: _rt::String,
+                pub description: _rt::String,
+                pub initial_bid: u64,
+                pub reserve: u64,
+                pub date_time: u64,
+                pub expires: u64,
+                pub seller: u64,
+                pub category: u64,
+                pub extra: _rt::String,
+            }
+            impl ::core::fmt::Debug for Auction {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("Auction")
+                        .field("id", &self.id)
+                        .field("item-name", &self.item_name)
+                        .field("description", &self.description)
+                        .field("initial-bid", &self.initial_bid)
+                        .field("reserve", &self.reserve)
+                        .field("date-time", &self.date_time)
+                        .field("expires", &self.expires)
+                        .field("seller", &self.seller)
+                        .field("category", &self.category)
+                        .field("extra", &self.extra)
+                        .finish()
+                }
+            }
+            #[derive(Clone)]
             pub struct Bid {
                 pub auction: u64,
                 pub bidder: u64,
@@ -37,6 +69,58 @@ pub mod pkg {
                         .finish()
                 }
             }
+            #[derive(Clone)]
+            pub struct Person {
+                pub id: u64,
+                pub name: _rt::String,
+                pub email_address: _rt::String,
+                pub credit_card: _rt::String,
+                pub city: _rt::String,
+                pub state: _rt::String,
+                pub date_time: u64,
+                pub extra: _rt::String,
+            }
+            impl ::core::fmt::Debug for Person {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    f.debug_struct("Person")
+                        .field("id", &self.id)
+                        .field("name", &self.name)
+                        .field("email-address", &self.email_address)
+                        .field("credit-card", &self.credit_card)
+                        .field("city", &self.city)
+                        .field("state", &self.state)
+                        .field("date-time", &self.date_time)
+                        .field("extra", &self.extra)
+                        .finish()
+                }
+            }
+            #[derive(Clone)]
+            pub enum EitherData {
+                Bid(Bid),
+                Auction(Auction),
+                Person(Person),
+            }
+            impl ::core::fmt::Debug for EitherData {
+                fn fmt(
+                    &self,
+                    f: &mut ::core::fmt::Formatter<'_>,
+                ) -> ::core::fmt::Result {
+                    match self {
+                        EitherData::Bid(e) => {
+                            f.debug_tuple("EitherData::Bid").field(e).finish()
+                        }
+                        EitherData::Auction(e) => {
+                            f.debug_tuple("EitherData::Auction").field(e).finish()
+                        }
+                        EitherData::Person(e) => {
+                            f.debug_tuple("EitherData::Person").field(e).finish()
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -52,6 +136,7 @@ pub mod exports {
                 static __FORCE_SECTION_REF: fn() = super::super::super::super::__link_custom_section_describing_imports;
                 use super::super::super::super::_rt;
                 pub type Bid = super::super::super::super::pkg::component::data_type::Bid;
+                pub type EitherData = super::super::super::super::pkg::component::data_type::EitherData;
                 #[doc(hidden)]
                 #[allow(non_snake_case)]
                 pub unsafe fn _export_qs_cabi<T: Guest>(
@@ -143,8 +228,347 @@ pub mod exports {
                         }
                     }
                 }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn _export_qs_g_cabi<T: Guest>(
+                    arg0: i32,
+                    arg1: i64,
+                    arg2: ::core::mem::MaybeUninit<u64>,
+                    arg3: i64,
+                    arg4: *mut u8,
+                    arg5: usize,
+                    arg6: ::core::mem::MaybeUninit<u64>,
+                    arg7: i64,
+                    arg8: ::core::mem::MaybeUninit<u64>,
+                    arg9: ::core::mem::MaybeUninit<u64>,
+                    arg10: ::core::mem::MaybeUninit<u64>,
+                    arg11: i64,
+                    arg12: ::core::mem::MaybeUninit<u64>,
+                    arg13: *mut u8,
+                    arg14: usize,
+                ) -> *mut u8 {
+                    #[cfg(target_arch = "wasm32")] _rt::run_ctors_once();
+                    use super::super::super::super::pkg::component::data_type::EitherData as V12;
+                    let v12 = match arg0 {
+                        0 => {
+                            let e12 = {
+                                let len0 = arg5;
+                                let bytes0 = _rt::Vec::from_raw_parts(
+                                    arg4.cast(),
+                                    len0,
+                                    len0,
+                                );
+                                let len1 = arg7 as usize;
+                                let bytes1 = _rt::Vec::from_raw_parts(
+                                    arg6.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len1,
+                                    len1,
+                                );
+                                let len2 = arg10.assume_init() as i64 as usize;
+                                let bytes2 = _rt::Vec::from_raw_parts(
+                                    arg9.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len2,
+                                    len2,
+                                );
+                                super::super::super::super::pkg::component::data_type::Bid {
+                                    auction: arg1 as u64,
+                                    bidder: arg2.assume_init() as i64 as u64,
+                                    price: arg3 as u64,
+                                    channel: _rt::string_lift(bytes0),
+                                    url: _rt::string_lift(bytes1),
+                                    date_time: arg8.assume_init() as i64 as u64,
+                                    extra: _rt::string_lift(bytes2),
+                                }
+                            };
+                            V12::Bid(e12)
+                        }
+                        1 => {
+                            let e12 = {
+                                let len3 = arg3 as usize;
+                                let bytes3 = _rt::Vec::from_raw_parts(
+                                    arg2.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len3,
+                                    len3,
+                                );
+                                let len4 = arg5;
+                                let bytes4 = _rt::Vec::from_raw_parts(
+                                    arg4.cast(),
+                                    len4,
+                                    len4,
+                                );
+                                let len5 = arg13 as usize;
+                                let bytes5 = _rt::Vec::from_raw_parts(
+                                    arg12.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len5,
+                                    len5,
+                                );
+                                super::super::super::super::pkg::component::data_type::Auction {
+                                    id: arg1 as u64,
+                                    item_name: _rt::string_lift(bytes3),
+                                    description: _rt::string_lift(bytes4),
+                                    initial_bid: arg6.assume_init() as i64 as u64,
+                                    reserve: arg7 as u64,
+                                    date_time: arg8.assume_init() as i64 as u64,
+                                    expires: arg9.assume_init() as i64 as u64,
+                                    seller: arg10.assume_init() as i64 as u64,
+                                    category: arg11 as u64,
+                                    extra: _rt::string_lift(bytes5),
+                                }
+                            };
+                            V12::Auction(e12)
+                        }
+                        n => {
+                            debug_assert_eq!(n, 2, "invalid enum discriminant");
+                            let e12 = {
+                                let len6 = arg3 as usize;
+                                let bytes6 = _rt::Vec::from_raw_parts(
+                                    arg2.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len6,
+                                    len6,
+                                );
+                                let len7 = arg5;
+                                let bytes7 = _rt::Vec::from_raw_parts(
+                                    arg4.cast(),
+                                    len7,
+                                    len7,
+                                );
+                                let len8 = arg7 as usize;
+                                let bytes8 = _rt::Vec::from_raw_parts(
+                                    arg6.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len8,
+                                    len8,
+                                );
+                                let len9 = arg9.assume_init() as i64 as usize;
+                                let bytes9 = _rt::Vec::from_raw_parts(
+                                    arg8.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len9,
+                                    len9,
+                                );
+                                let len10 = arg11 as usize;
+                                let bytes10 = _rt::Vec::from_raw_parts(
+                                    arg10.as_ptr().cast::<*mut u8>().read().cast(),
+                                    len10,
+                                    len10,
+                                );
+                                let len11 = arg14;
+                                let bytes11 = _rt::Vec::from_raw_parts(
+                                    arg13.cast(),
+                                    len11,
+                                    len11,
+                                );
+                                super::super::super::super::pkg::component::data_type::Person {
+                                    id: arg1 as u64,
+                                    name: _rt::string_lift(bytes6),
+                                    email_address: _rt::string_lift(bytes7),
+                                    credit_card: _rt::string_lift(bytes8),
+                                    city: _rt::string_lift(bytes9),
+                                    state: _rt::string_lift(bytes10),
+                                    date_time: arg12.assume_init() as i64 as u64,
+                                    extra: _rt::string_lift(bytes11),
+                                }
+                            };
+                            V12::Person(e12)
+                        }
+                    };
+                    let result13 = T::qs_g(v12);
+                    let ptr14 = _RET_AREA.0.as_mut_ptr().cast::<u8>();
+                    match result13 {
+                        Some(e) => {
+                            *ptr14.add(0).cast::<u8>() = (1i32) as u8;
+                            use super::super::super::super::pkg::component::data_type::EitherData as V30;
+                            match e {
+                                V30::Bid(e) => {
+                                    *ptr14.add(8).cast::<u8>() = (0i32) as u8;
+                                    let super::super::super::super::pkg::component::data_type::Bid {
+                                        auction: auction15,
+                                        bidder: bidder15,
+                                        price: price15,
+                                        channel: channel15,
+                                        url: url15,
+                                        date_time: date_time15,
+                                        extra: extra15,
+                                    } = e;
+                                    *ptr14.add(16).cast::<i64>() = _rt::as_i64(auction15);
+                                    *ptr14.add(24).cast::<i64>() = _rt::as_i64(bidder15);
+                                    *ptr14.add(32).cast::<i64>() = _rt::as_i64(price15);
+                                    let vec16 = (channel15.into_bytes()).into_boxed_slice();
+                                    let ptr16 = vec16.as_ptr().cast::<u8>();
+                                    let len16 = vec16.len();
+                                    ::core::mem::forget(vec16);
+                                    *ptr14.add(44).cast::<usize>() = len16;
+                                    *ptr14.add(40).cast::<*mut u8>() = ptr16.cast_mut();
+                                    let vec17 = (url15.into_bytes()).into_boxed_slice();
+                                    let ptr17 = vec17.as_ptr().cast::<u8>();
+                                    let len17 = vec17.len();
+                                    ::core::mem::forget(vec17);
+                                    *ptr14.add(52).cast::<usize>() = len17;
+                                    *ptr14.add(48).cast::<*mut u8>() = ptr17.cast_mut();
+                                    *ptr14.add(56).cast::<i64>() = _rt::as_i64(date_time15);
+                                    let vec18 = (extra15.into_bytes()).into_boxed_slice();
+                                    let ptr18 = vec18.as_ptr().cast::<u8>();
+                                    let len18 = vec18.len();
+                                    ::core::mem::forget(vec18);
+                                    *ptr14.add(68).cast::<usize>() = len18;
+                                    *ptr14.add(64).cast::<*mut u8>() = ptr18.cast_mut();
+                                }
+                                V30::Auction(e) => {
+                                    *ptr14.add(8).cast::<u8>() = (1i32) as u8;
+                                    let super::super::super::super::pkg::component::data_type::Auction {
+                                        id: id19,
+                                        item_name: item_name19,
+                                        description: description19,
+                                        initial_bid: initial_bid19,
+                                        reserve: reserve19,
+                                        date_time: date_time19,
+                                        expires: expires19,
+                                        seller: seller19,
+                                        category: category19,
+                                        extra: extra19,
+                                    } = e;
+                                    *ptr14.add(16).cast::<i64>() = _rt::as_i64(id19);
+                                    let vec20 = (item_name19.into_bytes()).into_boxed_slice();
+                                    let ptr20 = vec20.as_ptr().cast::<u8>();
+                                    let len20 = vec20.len();
+                                    ::core::mem::forget(vec20);
+                                    *ptr14.add(28).cast::<usize>() = len20;
+                                    *ptr14.add(24).cast::<*mut u8>() = ptr20.cast_mut();
+                                    let vec21 = (description19.into_bytes()).into_boxed_slice();
+                                    let ptr21 = vec21.as_ptr().cast::<u8>();
+                                    let len21 = vec21.len();
+                                    ::core::mem::forget(vec21);
+                                    *ptr14.add(36).cast::<usize>() = len21;
+                                    *ptr14.add(32).cast::<*mut u8>() = ptr21.cast_mut();
+                                    *ptr14.add(40).cast::<i64>() = _rt::as_i64(initial_bid19);
+                                    *ptr14.add(48).cast::<i64>() = _rt::as_i64(reserve19);
+                                    *ptr14.add(56).cast::<i64>() = _rt::as_i64(date_time19);
+                                    *ptr14.add(64).cast::<i64>() = _rt::as_i64(expires19);
+                                    *ptr14.add(72).cast::<i64>() = _rt::as_i64(seller19);
+                                    *ptr14.add(80).cast::<i64>() = _rt::as_i64(category19);
+                                    let vec22 = (extra19.into_bytes()).into_boxed_slice();
+                                    let ptr22 = vec22.as_ptr().cast::<u8>();
+                                    let len22 = vec22.len();
+                                    ::core::mem::forget(vec22);
+                                    *ptr14.add(92).cast::<usize>() = len22;
+                                    *ptr14.add(88).cast::<*mut u8>() = ptr22.cast_mut();
+                                }
+                                V30::Person(e) => {
+                                    *ptr14.add(8).cast::<u8>() = (2i32) as u8;
+                                    let super::super::super::super::pkg::component::data_type::Person {
+                                        id: id23,
+                                        name: name23,
+                                        email_address: email_address23,
+                                        credit_card: credit_card23,
+                                        city: city23,
+                                        state: state23,
+                                        date_time: date_time23,
+                                        extra: extra23,
+                                    } = e;
+                                    *ptr14.add(16).cast::<i64>() = _rt::as_i64(id23);
+                                    let vec24 = (name23.into_bytes()).into_boxed_slice();
+                                    let ptr24 = vec24.as_ptr().cast::<u8>();
+                                    let len24 = vec24.len();
+                                    ::core::mem::forget(vec24);
+                                    *ptr14.add(28).cast::<usize>() = len24;
+                                    *ptr14.add(24).cast::<*mut u8>() = ptr24.cast_mut();
+                                    let vec25 = (email_address23.into_bytes())
+                                        .into_boxed_slice();
+                                    let ptr25 = vec25.as_ptr().cast::<u8>();
+                                    let len25 = vec25.len();
+                                    ::core::mem::forget(vec25);
+                                    *ptr14.add(36).cast::<usize>() = len25;
+                                    *ptr14.add(32).cast::<*mut u8>() = ptr25.cast_mut();
+                                    let vec26 = (credit_card23.into_bytes()).into_boxed_slice();
+                                    let ptr26 = vec26.as_ptr().cast::<u8>();
+                                    let len26 = vec26.len();
+                                    ::core::mem::forget(vec26);
+                                    *ptr14.add(44).cast::<usize>() = len26;
+                                    *ptr14.add(40).cast::<*mut u8>() = ptr26.cast_mut();
+                                    let vec27 = (city23.into_bytes()).into_boxed_slice();
+                                    let ptr27 = vec27.as_ptr().cast::<u8>();
+                                    let len27 = vec27.len();
+                                    ::core::mem::forget(vec27);
+                                    *ptr14.add(52).cast::<usize>() = len27;
+                                    *ptr14.add(48).cast::<*mut u8>() = ptr27.cast_mut();
+                                    let vec28 = (state23.into_bytes()).into_boxed_slice();
+                                    let ptr28 = vec28.as_ptr().cast::<u8>();
+                                    let len28 = vec28.len();
+                                    ::core::mem::forget(vec28);
+                                    *ptr14.add(60).cast::<usize>() = len28;
+                                    *ptr14.add(56).cast::<*mut u8>() = ptr28.cast_mut();
+                                    *ptr14.add(64).cast::<i64>() = _rt::as_i64(date_time23);
+                                    let vec29 = (extra23.into_bytes()).into_boxed_slice();
+                                    let ptr29 = vec29.as_ptr().cast::<u8>();
+                                    let len29 = vec29.len();
+                                    ::core::mem::forget(vec29);
+                                    *ptr14.add(76).cast::<usize>() = len29;
+                                    *ptr14.add(72).cast::<*mut u8>() = ptr29.cast_mut();
+                                }
+                            }
+                        }
+                        None => {
+                            *ptr14.add(0).cast::<u8>() = (0i32) as u8;
+                        }
+                    };
+                    ptr14
+                }
+                #[doc(hidden)]
+                #[allow(non_snake_case)]
+                pub unsafe fn __post_return_qs_g<T: Guest>(arg0: *mut u8) {
+                    let l0 = i32::from(*arg0.add(0).cast::<u8>());
+                    match l0 {
+                        0 => {}
+                        _ => {
+                            let l1 = i32::from(*arg0.add(8).cast::<u8>());
+                            match l1 {
+                                0 => {
+                                    let l2 = *arg0.add(40).cast::<*mut u8>();
+                                    let l3 = *arg0.add(44).cast::<usize>();
+                                    _rt::cabi_dealloc(l2, l3, 1);
+                                    let l4 = *arg0.add(48).cast::<*mut u8>();
+                                    let l5 = *arg0.add(52).cast::<usize>();
+                                    _rt::cabi_dealloc(l4, l5, 1);
+                                    let l6 = *arg0.add(64).cast::<*mut u8>();
+                                    let l7 = *arg0.add(68).cast::<usize>();
+                                    _rt::cabi_dealloc(l6, l7, 1);
+                                }
+                                1 => {
+                                    let l8 = *arg0.add(24).cast::<*mut u8>();
+                                    let l9 = *arg0.add(28).cast::<usize>();
+                                    _rt::cabi_dealloc(l8, l9, 1);
+                                    let l10 = *arg0.add(32).cast::<*mut u8>();
+                                    let l11 = *arg0.add(36).cast::<usize>();
+                                    _rt::cabi_dealloc(l10, l11, 1);
+                                    let l12 = *arg0.add(88).cast::<*mut u8>();
+                                    let l13 = *arg0.add(92).cast::<usize>();
+                                    _rt::cabi_dealloc(l12, l13, 1);
+                                }
+                                _ => {
+                                    let l14 = *arg0.add(24).cast::<*mut u8>();
+                                    let l15 = *arg0.add(28).cast::<usize>();
+                                    _rt::cabi_dealloc(l14, l15, 1);
+                                    let l16 = *arg0.add(32).cast::<*mut u8>();
+                                    let l17 = *arg0.add(36).cast::<usize>();
+                                    _rt::cabi_dealloc(l16, l17, 1);
+                                    let l18 = *arg0.add(40).cast::<*mut u8>();
+                                    let l19 = *arg0.add(44).cast::<usize>();
+                                    _rt::cabi_dealloc(l18, l19, 1);
+                                    let l20 = *arg0.add(48).cast::<*mut u8>();
+                                    let l21 = *arg0.add(52).cast::<usize>();
+                                    _rt::cabi_dealloc(l20, l21, 1);
+                                    let l22 = *arg0.add(56).cast::<*mut u8>();
+                                    let l23 = *arg0.add(60).cast::<usize>();
+                                    _rt::cabi_dealloc(l22, l23, 1);
+                                    let l24 = *arg0.add(72).cast::<*mut u8>();
+                                    let l25 = *arg0.add(76).cast::<usize>();
+                                    _rt::cabi_dealloc(l24, l25, 1);
+                                }
+                            }
+                        }
+                    }
+                }
                 pub trait Guest {
                     fn qs(bid: Bid) -> Option<Bid>;
+                    fn qs_g(data: EitherData) -> Option<EitherData>;
                 }
                 #[doc(hidden)]
                 macro_rules! __export_pkg_component_nexmark_cabi {
@@ -157,15 +581,29 @@ pub mod exports {
                         arg3, arg4, arg5, arg6, arg7, arg8, arg9) } #[export_name =
                         "cabi_post_pkg:component/nexmark#qs"] unsafe extern "C" fn
                         _post_return_qs(arg0 : * mut u8,) { $($path_to_types)*::
-                        __post_return_qs::<$ty > (arg0) } };
+                        __post_return_qs::<$ty > (arg0) } #[export_name =
+                        "pkg:component/nexmark#qs-g"] unsafe extern "C" fn
+                        export_qs_g(arg0 : i32, arg1 : i64, arg2 :
+                        ::core::mem::MaybeUninit::< u64 >, arg3 : i64, arg4 : * mut u8,
+                        arg5 : usize, arg6 : ::core::mem::MaybeUninit::< u64 >, arg7 :
+                        i64, arg8 : ::core::mem::MaybeUninit::< u64 >, arg9 :
+                        ::core::mem::MaybeUninit::< u64 >, arg10 :
+                        ::core::mem::MaybeUninit::< u64 >, arg11 : i64, arg12 :
+                        ::core::mem::MaybeUninit::< u64 >, arg13 : * mut u8, arg14 :
+                        usize,) -> * mut u8 { $($path_to_types)*::
+                        _export_qs_g_cabi::<$ty > (arg0, arg1, arg2, arg3, arg4, arg5,
+                        arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14) }
+                        #[export_name = "cabi_post_pkg:component/nexmark#qs-g"] unsafe
+                        extern "C" fn _post_return_qs_g(arg0 : * mut u8,) {
+                        $($path_to_types)*:: __post_return_qs_g::<$ty > (arg0) } };
                     };
                 }
                 #[doc(hidden)]
                 pub(crate) use __export_pkg_component_nexmark_cabi;
                 #[repr(align(8))]
-                struct _RetArea([::core::mem::MaybeUninit<u8>; 64]);
+                struct _RetArea([::core::mem::MaybeUninit<u8>; 96]);
                 static mut _RET_AREA: _RetArea = _RetArea(
-                    [::core::mem::MaybeUninit::uninit(); 64],
+                    [::core::mem::MaybeUninit::uninit(); 96],
                 );
             }
         }
@@ -252,19 +690,22 @@ pub(crate) use __export_component_impl as export;
 #[cfg(target_arch = "wasm32")]
 #[link_section = "component-type:wit-bindgen:0.36.0:pkg:component:component:encoded world"]
 #[doc(hidden)]
-pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 557] = *b"\
-\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\xad\x03\x01A\x02\x01\
-A\x06\x01B\x06\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
+pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 666] = *b"\
+\0asm\x0d\0\x01\0\0\x19\x16wit-component-encoding\x04\0\x07\x9a\x04\x01A\x02\x01\
+A\x07\x01B\x08\x01r\x0a\x02idw\x09item-names\x0bdescriptions\x0binitial-bidw\x07\
 reservew\x09date-timew\x07expiresw\x06sellerw\x08categoryw\x05extras\x04\0\x07au\
 ction\x03\0\0\x01r\x07\x07auctionw\x06bidderw\x05pricew\x07channels\x03urls\x09d\
 ate-timew\x05extras\x04\0\x03bid\x03\0\x02\x01r\x08\x02idw\x04names\x0demail-add\
 resss\x0bcredit-cards\x04citys\x05states\x09date-timew\x05extras\x04\0\x06person\
-\x03\0\x04\x03\0\x17pkg:component/data-type\x05\0\x02\x03\0\0\x03bid\x02\x03\0\0\
-\x07auction\x01B\x07\x02\x03\x02\x01\x01\x04\0\x03bid\x03\0\0\x02\x03\x02\x01\x02\
-\x04\0\x07auction\x03\0\x02\x01k\x01\x01@\x01\x03bid\x01\0\x04\x04\0\x02qs\x01\x05\
-\x04\0\x15pkg:component/nexmark\x05\x03\x04\0\x17pkg:component/component\x04\0\x0b\
-\x0f\x01\0\x09component\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-c\
-omponent\x070.220.1\x10wit-bindgen-rust\x060.36.0";
+\x03\0\x04\x01q\x03\x03bid\x01\x03\0\x07auction\x01\x01\0\x06person\x01\x05\0\x04\
+\0\x0beither-data\x03\0\x06\x03\0\x17pkg:component/data-type\x05\0\x02\x03\0\0\x03\
+bid\x02\x03\0\0\x07auction\x02\x03\0\0\x0beither-data\x01B\x0c\x02\x03\x02\x01\x01\
+\x04\0\x03bid\x03\0\0\x02\x03\x02\x01\x02\x04\0\x07auction\x03\0\x02\x02\x03\x02\
+\x01\x03\x04\0\x0beither-data\x03\0\x04\x01k\x01\x01@\x01\x03bid\x01\0\x06\x04\0\
+\x02qs\x01\x07\x01k\x05\x01@\x01\x04data\x05\0\x08\x04\0\x04qs-g\x01\x09\x04\0\x15\
+pkg:component/nexmark\x05\x04\x04\0\x17pkg:component/component\x04\0\x0b\x0f\x01\
+\0\x09component\x03\0\0\0G\x09producers\x01\x0cprocessed-by\x02\x0dwit-component\
+\x070.220.1\x10wit-bindgen-rust\x060.36.0";
 #[inline(never)]
 #[doc(hidden)]
 pub fn __link_custom_section_describing_imports() {
