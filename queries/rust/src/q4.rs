@@ -83,7 +83,8 @@ pub fn run_wasm(
     // wasm_func1: WasmFunction<(u64, u64), (bool,)>, 
     wasm_func1: WasmFunction<(Vec<(u64, u64)>,), (bool,)>, 
     wasm_func2: WasmFunction<(Vec<(Auction, Bid)>,), (u64,)>, 
-    wasm_func3: WasmFunction<(Vec<(u64, u64)>,), (u64,)>) {
+    wasm_func3: WasmFunction<(Vec<(u64, u64)>,), (u64,)>
+) {
     // let auctions = auctions.map(ctx, |a| {
     //     Q4PrunedAuction::new(a.id, a.category, a.expires, a.date_time)
     // });
