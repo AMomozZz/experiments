@@ -18,7 +18,10 @@ pub enum Either {
 #[serde(crate = "runtime::prelude::serde")]
 #[component(variant)]
 pub enum EitherData {
+    #[component(name = "bid")]
     Bid(Bid),
+    #[component(name = "auction")]
     Auction(Auction),
+    #[component(name = "person")]
     Person(Person),
 }
