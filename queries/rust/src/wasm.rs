@@ -1,13 +1,10 @@
 use std::{cell::RefCell, rc::Rc, fmt::Debug};
 
-// use runtime::prelude::stream::Event;
 use runtime::prelude::*;
 use wasmtime::{component::{Component, Linker, TypedFunc}, Engine as WasmEngine, Store};
 use wasmtime_wasi::{ResourceTable, WasiImpl};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use runtime::prelude::serde::Deserialize;
-
-// use crate::either::Either;
 
 // host
 pub struct Host {
@@ -133,49 +130,6 @@ where
             .get_typed_func::<I, O>(&mut *store, func_export)
             .unwrap()
     }
-
-    // pub fn run_wasm_operator(
-    //     self,
-    //     datas: Stream<I>, 
-    //     components: Stream<WasmComponent>, 
-    //     ctx: &mut Context,
-    // ) {
-    //     let datas_source = datas.map(ctx, |bid| Either::Bid(data));
-    //     let components_source = components.map(ctx, |component| Either::Component(component));
-    
-    //     let mut input = data_source.merge(ctx, components_source).sorted(ctx);
-    
-    //     ctx.operator(move |tx| async move {
-    //         let mut func = self.func.unwrap();
-    //         loop {
-    //             match input.recv().await {
-    //                 Event::Data(time, ref either) => {
-    //                     match either {
-    //                         Either::Bid(bid) => {
-    //                             match func.is_empty() {
-    //                                 false => tx.send(Event::Data(time, func.call((bid.clone(),)).0)).await?,
-    //                                 true => tx.send(Event::Data(time, None)).await?,
-    //                             }
-    //                         },
-    //                         Either::Component(wasm_component) => {
-    //                             func.switch(&wasm_component.file, &wasm_component.pkg_name, &wasm_component.name);
-    //                         },
-    //                         Either::Auction(_auction) => todo!(),
-    //                         Either::Person(_person) => todo!(),
-    //                     }
-    //                 },
-    //                 Event::Watermark(time) => tx.send(Event::Watermark(time)).await?,
-    //                 Event::Snapshot(id) => tx.send(Event::Snapshot(id)).await?,
-    //                 Event::Sentinel => {
-    //                     tx.send(Event::Sentinel).await?;
-    //                     break;
-    //                 },
-    //             }
-    //         }
-    //         Ok(())
-    //     })
-    //     .drain(ctx);
-    // }
 }
 
 #[derive(Debug, Clone, Send, DeepClone, serde::Serialize, serde::Deserialize, Timestamp, New)]
