@@ -24,6 +24,7 @@ use data::Q6JoinOutput;
 use data::Q7PrunedBid;
 use data::QwOutput;
 use data::QwPrunedBid;
+use either::EitherData;
 use crate::wasm::WasmComponent;
 use runtime::prelude::serde::de::DeserializeOwned;
 use runtime::prelude::*;
@@ -166,6 +167,10 @@ fn main() {
             let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
             timed(move |ctx| qs::run_wasm_operator(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, empty_wasm_func))
         },
+        "qs-wasm-g" => {
+            let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
+            timed(move |ctx| qs::run_wasm_operator_g(stream(ctx, bids).map(ctx, |data| EitherData::Bid(data)), stream_with(ctx, components_bids, 1), ctx, empty_wasm_func))
+        },
 
         // io
         "io" => {
@@ -180,10 +185,26 @@ fn main() {
                     stream(ctx, auctions).drain(ctx);
                 }
                 if components_bids.is_ok() {
-                    stream(ctx, components_bids).drain(ctx);
+                    stream_with(ctx, components_bids, 1).drain(ctx);
                 }
             });
         },
+
+        // map
+        "io-with-map" => timed(move |ctx| {
+            if bids.is_ok() {
+                stream(ctx, bids).map(ctx, |data| EitherData::Bid(data)).drain(ctx);
+            }
+            if persons.is_ok() {
+                stream(ctx, persons).map(ctx, |data| EitherData::Person(data)).drain(ctx);
+            }
+            if auctions.is_ok() {
+                stream(ctx, auctions).map(ctx, |data| EitherData::Auction(data)).drain(ctx);
+            }
+            if components_bids.is_ok() {
+                stream_with(ctx, components_bids, 1).drain(ctx);
+            }
+        }),
         _ => panic!("unknown query"),
     }
 }
