@@ -35,6 +35,9 @@ cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid io
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent io
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-with-map
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-datas
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-components
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG switch-component
 
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-opt
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q2-opt

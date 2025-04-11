@@ -30,6 +30,9 @@ cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids
 ```bash
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid io
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-with-map
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-datas
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-components
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG switch-component
 ```
 
 and

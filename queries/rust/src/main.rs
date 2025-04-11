@@ -25,6 +25,7 @@ use data::Q7PrunedBid;
 use data::QwOutput;
 use data::QwPrunedBid;
 use either::EitherData;
+use runtime::prelude::stream::Event;
 use crate::wasm::WasmComponent;
 use runtime::prelude::serde::de::DeserializeOwned;
 use runtime::prelude::*;
@@ -205,6 +206,47 @@ fn main() {
                 stream_with(ctx, components_bids, 1).drain(ctx);
             }
         }),
+
+        "io-datas" => timed(move |ctx| {
+            if bids.is_ok() {
+                stream(ctx, bids).map(ctx, |data| EitherData::Bid(data)).drain(ctx);
+            }
+            if persons.is_ok() {
+                stream(ctx, persons).map(ctx, |data| EitherData::Person(data)).drain(ctx);
+            }
+            if auctions.is_ok() {
+                stream(ctx, auctions).map(ctx, |data| EitherData::Auction(data)).drain(ctx);
+            }
+        }),
+
+        "io-components" => timed(move |ctx| {
+            if components_bids.is_ok() {
+                stream_with(ctx, components_bids, 1).drain(ctx);
+            }
+        }),
+
+        //load and switch component
+        "switch-component" => {
+            let mut empty_wasm_func: WasmFunction<(EitherData,), (Option<EitherData>,)> = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
+            timed(move |ctx| {
+                if components_bids.is_ok() {
+                    let mut s: Stream<WasmComponent> = stream_with(ctx, components_bids, 1);
+                    ctx.operator(move |_: stream::Collector<Option<Bid>>| async move {
+                        loop {
+                            match s.recv().await {
+                                Event::Data(_, ref either) => {
+                                    empty_wasm_func.switch(&either.file, &either.pkg_name, &either.name);
+                                },
+                                Event::Sentinel => break,
+                                _ => {},
+                            }
+                        }
+                        Ok(())
+                    }).drain(ctx)
+                }
+            })
+        },
+        
         _ => panic!("unknown query"),
     }
 }
