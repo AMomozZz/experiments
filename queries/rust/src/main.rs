@@ -207,7 +207,21 @@ fn main() {
             }
         }),
 
-        "io-datas" => timed(move |ctx| {
+        "io-datas" => {
+            timed(move |ctx| {
+                if bids.is_ok() {
+                    stream(ctx, bids).drain(ctx);
+                }
+                if persons.is_ok() {
+                    stream(ctx, persons).drain(ctx);
+                }
+                if auctions.is_ok() {
+                    stream(ctx, auctions).drain(ctx);
+                }
+            });
+        },
+
+        "io-datas-with-map" => timed(move |ctx| {
             if bids.is_ok() {
                 stream(ctx, bids).map(ctx, |data| EitherData::Bid(data)).drain(ctx);
             }
@@ -246,7 +260,7 @@ fn main() {
                 }
             })
         },
-        
+
         _ => panic!("unknown query"),
     }
 }
