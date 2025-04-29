@@ -1,0 +1,3 @@
+[submodule "wasip3-prototyping"]
+	path = wasip3-prototyping
+	url = https://github.com/bytecodealliance/wasip3-prototyping.git
