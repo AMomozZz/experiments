@@ -1,32 +1,31 @@
 wit_bindgen::generate!({
-    world: "component",
+    world: "guest",
 });
 
-use exports::pkg::component::nexmark::{Bid, Guest as NexmarkGuest, EitherData};
-
+use exports::pkg::component::nexmark::{Bid, Guest};
+use wit_bindgen::StreamReader;
+use wit_bindgen::rt::async_support;
 struct Component;
 
 export!(Component);
 
-impl NexmarkGuest for Component {
-    fn qs(bid: Bid,) -> Option<Bid> {
-        let filters = vec![1007, 1020, 2001, 2019, 2087];
-        match filters.contains(&bid.auction) {
-            true => Some(bid),
-            false => None,
-        }
-    }
-    
-    fn qs_g(data:EitherData,) -> Option<EitherData> {
-        match data {
-            EitherData::Bid(bid) => {
-                let filters = vec![1007, 1020, 2001, 2019, 2087];
-                match filters.contains(&bid.auction) {
-                    true => Some(EitherData::Bid(bid)),
-                    false => None,
+impl Guest for Component {
+    fn q1(mut stream: StreamReader<Bid>,) -> StreamReader<Bid> {
+            let (mut tx, rx) = wit_stream::new::<Bid>();
+            async_support::spawn(async move {
+                loop {
+                    match stream.next().await {
+                        Some(ref item) => {
+                            let mut re = item.clone();
+                            re.price = item.price * 100 / 85;
+                            tx.write(vec![re]).await;
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
                 }
-            },
-            _ => None,
+            });
+            rx
         }
-    }
 }

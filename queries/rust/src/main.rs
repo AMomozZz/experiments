@@ -101,6 +101,7 @@ fn main() {
     let wasm_func_q6_avg = WasmFunction::<(Vec<Q6JoinOutput>, ), (u64,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "q6-avg");
     let wasm_func_q7 = WasmFunction::<(Vec<Q7PrunedBid>, ), (Q7PrunedBid,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "q7");
     let wasm_func_qw = WasmFunction::<(Vec<QwPrunedBid>, ), (QwOutput,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "qw");
+    // let wasm_func_stream_q1 = WasmFunction::
 
 
     fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {

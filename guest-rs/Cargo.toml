@@ -1,12 +1,12 @@
 [package]
-name = "component-rs"
+name = "component-stream"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 nexmark = { version = "0.2.0", features = ["serde"] }
 serde_json = "1.0.139"
-wit-bindgen = "0.39.0"
+wit-bindgen = { git = "https://github.com/bytecodealliance/wit-bindgen", rev = "5708666", features = ["default"] }
 
 [lib]
 crate-type = ["cdylib"]

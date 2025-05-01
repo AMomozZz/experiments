@@ -1,0 +1,23 @@
+[package]
+name = "wasip3-adapter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wasmtime = { path = "../wasip3-prototyping/crates/wasmtime", features = ["component-model-async", "cache", "incremental-cache", "cranelift"] }
+wasmtime-wasi = { path = "../wasip3-prototyping/crates/wasi", default-features = false, features = ["p3"] }
+wasmtime-wasi-http = { path = "../wasip3-prototyping/crates/wasi-http", default-features = false, features = ["p3"] }
+wasmparser = { version = "0.228.0", git = "https://github.com/bytecodealliance/wasm-tools", rev = "df50cdf49b41656351d603a8f99bae11c50ea524" }
+wit-component = { version = "0.228.0", git = "https://github.com/bytecodealliance/wasm-tools", rev = "df50cdf49b41656351d603a8f99bae11c50ea524" }
+
+anyhow = "1.0.79"
+reqwest = { version = "0.12.12", features = ["blocking"] }
+tokio = { version = "1.44.1", features = ["full"] }
+
+[build-dependencies]
+wasmparser = { version = "0.228.0", git = "https://github.com/bytecodealliance/wasm-tools", rev = "df50cdf49b41656351d603a8f99bae11c50ea524" }
+wit-component = { version = "0.228.0", git = "https://github.com/bytecodealliance/wasm-tools", rev = "df50cdf49b41656351d603a8f99bae11c50ea524" }
+
+[patch.crates-io]
+wasmparser = { version = "0.228.0", git = "https://github.com/bytecodealliance/wasm-tools", rev = "df50cdf49b41656351d603a8f99bae11c50ea524" }
+

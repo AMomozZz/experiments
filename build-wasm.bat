@@ -10,11 +10,11 @@ if %errorlevel% neq 0 (
         exit /b %errorlevel%
 )
 
-cd ../guest-qs
+@REM cd ../guest-qs
 
-echo Building the project...
-cargo component build --target wasm32-wasip2 --release
-if %errorlevel% neq 0 (
-        echo Build failed.
-        exit /b %errorlevel%
-)
+@REM echo Building the project...
+@REM cargo component build --target wasm32-wasip2 --release
+@REM if %errorlevel% neq 0 (
+@REM         echo Build failed.
+@REM         exit /b %errorlevel%
+@REM )

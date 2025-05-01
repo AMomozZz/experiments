@@ -47,11 +47,10 @@ interface data-type {
 
 interface nexmark {
     use data-type.{bid, auction, either-data};
-    qs: func(bid: bid) -> option<bid>;
-    qs-g: func(data: either-data) -> option<either-data>;
+    q1: func(s: stream<bid>) -> stream<bid>;
 }
 
-world component {
+world guest {
     import data-type;
     export nexmark;
 }
