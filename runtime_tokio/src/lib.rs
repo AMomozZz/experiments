@@ -39,6 +39,10 @@ pub type ArrayVec<T, const N: usize> = arrayvec::ArrayVec<T, N>;
 #[cfg(not(feature = "opt"))]
 pub type ArrayVec<T, const N: usize> = std::vec::Vec<T>;
 
+#[cfg(all(not(target_env = "msvc"), feature = "opt"))]
+#[global_allocator]
+static GLOBAL: jemalloc::Jemalloc = jemalloc::Jemalloc;
+
 pub mod prelude {
     pub use macros::data;
     pub use macros::unwrap;

@@ -1,6 +1,6 @@
 [package]
 name = "runtime"
-version = "0.2.0"
+version = "0.1.0"
 edition = "2018"
 
 [features]
@@ -10,23 +10,27 @@ opt = [
   "ryu",
   "lexical-parse-float",
   "rustc-hash",
+  "jemalloc",
   "btree-slab",
   "smallvec",
   "halfbrown",
   "smol_str",
   "arrayvec",
+  "multi-thread",
 ]
+multi-thread = ["tokio/rt-multi-thread"]
 default = ["opt"]
 
 [dependencies]
 macros = { path = "../macros" }
 
 # rdkafka = { version = "0.36.2" }
-tokio = { version = "1.36.0", features = ["io-util", "rt", "macros", "time", "sync"] }
+tokio = { version = "1.36.0", features = ["io-util", "io-std", "fs", "net", "rt", "macros"] }
 tracing = { version = "0.1.40", default-features = false }
 num-integer = { version = "0.1.46", default-features = false }
 
 serde = { version = "1.0.197", features = ["derive", "rc"] }
+tokio-stream = { version = "0.1.14" }
 tokio-util = { version = "0.7.10", default-features = false, features  = ["codec"] }
 futures-util = { version = "0.3.30", default-features = false, features = ["sink"] }
 time = { version = "0.3.36", default-features = false, features = ["serde-human-readable"] }
@@ -49,6 +53,7 @@ smartstring = { version = "1.0.1", optional = true, features = ["serde"] }
 btree-slab = { version = "0.6.1", optional = true }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemalloc = { version = "0.5.4", optional = true, package = "tikv-jemallocator" }
 
 # TODO: Extensions
 

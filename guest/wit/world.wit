@@ -1,0 +1,179 @@
+
+package pkg:component;
+
+interface data-type {
+    record auction {
+        id: u64,
+        item-name: string,
+        description: string,
+        initial-bid: u64,
+        reserve: u64,
+
+        date-time: u64,
+        expires: u64,
+        seller: u64,
+        category: u64,
+        extra: string,
+    }
+
+    record bid {
+        auction: u64,
+        bidder: u64,
+        price: u64,
+        channel: string,
+        url: string,
+        
+        date-time: u64,
+        extra: string,
+    }
+
+    record person {
+        id: u64,
+        name: string,
+        email-address: string,
+        credit-card: string,
+        city: string,
+        state: string,
+        
+        date-time: u64,
+        extra: string,
+    }
+    
+    variant value {
+        ty-u64(u64),
+        ty-string(string),
+    }
+
+    variant compare-op-v {
+        eq(tuple<value, value>),    // ==
+        ne(tuple<value, value>),    // !=
+        gt(tuple<value, value>),    // >
+        gte(tuple<value, value>),   // >=
+        lt(tuple<value, value>),    // <
+        lte(tuple<value, value>),    // <=
+        // contains(tuple<value, list<value>>), // contains
+    }
+}
+
+interface u64-compare {
+    eq: func(value1: u64, value2: u64) -> bool;
+    ne: func(value1: u64, value2: u64) -> bool;
+    gt: func(value1: u64, value2: u64) -> bool;
+    gte: func(value1: u64, value2: u64) -> bool;
+    lt: func(value1: u64, value2: u64) -> bool;
+    lte: func(value1: u64, value2: u64) -> bool;
+
+    eq-m: func(v: list<tuple<u64, u64>>) -> bool;
+    ne-m: func(v: list<tuple<u64, u64>>) -> bool;
+    gt-m: func(v: list<tuple<u64, u64>>) -> bool;
+    gte-m: func(v: list<tuple<u64, u64>>) -> bool;
+    lt-m: func(v: list<tuple<u64, u64>>) -> bool;
+    lte-m: func(v: list<tuple<u64, u64>>) -> bool;
+}
+
+interface q4-records {
+    record q4-auction {
+        id: u64,
+        category: u64,
+        expires: u64,
+        date-time: u64,
+    }
+
+    record q4-bid {
+        auction: u64,
+        price: u64,
+        date-time: u64,
+    }
+}
+
+interface q5-records {
+    record q5-bid {
+        auction: u64,
+        bidder: u64,
+    }
+}
+
+interface q6-records {
+    record q6-join-output {
+        auction-seller: u64,
+        auction-expires: u64,
+        auction-date-time: u64,
+        bid-price: u64,
+        bid-date-time: u64,
+    }
+}
+
+interface q7-records {
+    record q7-bid {
+        auction: u64,
+        price: u64,
+        bidder: u64,
+    }
+}
+
+interface nexmark {
+    use data-type.{bid, auction, compare-op-v, value};
+    use q4-records.{q4-auction, q4-bid};
+    use q5-records.{q5-bid};
+    use q6-records.{q6-join-output};
+    use q7-records.{q7-bid};
+    //convert-currency
+    // q1: func(bid: bid) -> bid;
+    q1: func(auction: u64, price: u64, bidder: u64, date-time: u64) -> tuple<u64, u64, u64, u64>;
+
+    //filter
+    q2: func(auction: u64, price: u64, filters: list<u64>) -> option<tuple<u64, u64>>;
+
+    //single-filter
+    single-filter: func(p: u64, filters: list<u64>) -> bool;
+    
+    //multi-filter
+    multi-filter: func(v: list<tuple<u64, list<u64>>>) -> bool;
+
+    //multi-filter-opt
+    multi-filter-opt: func(v: list<tuple<u64, list<u64>>>) -> bool;
+
+    //string-single-filter
+    string-single-filter: func(p: string, filters: list<string>) -> bool;
+
+    //single-less-or-equal
+    less-or-equal-single: func(a: u64, b: u64) -> bool;
+
+    //multi-less-or-equal
+    less-or-equal-multi: func(v: list<tuple<u64, u64>>) -> bool;
+
+    //q4-max-of-bid-price
+    q4-max-of-bid-price: func(v: list<tuple<auction, bid>>) -> u64;
+
+    //q4-max-of-bid-price-pruned
+    q4-max-of-bid-price-p: func(v: list<tuple<q4-auction, q4-bid>>) -> u64;
+
+    //q4-avg
+    q4-avg: func(v: list<tuple<u64, u64>>) -> u64;
+
+    //q5-count
+    q5-count: func(v: list<q5-bid>) -> u64;
+
+    //q5-max-by-key
+    q5-max-by-key: func(v: list<tuple<u64, u64>>) -> u64;
+
+    //q6-multi-comparison
+    q6-multi-comparison-v: func(v: list<compare-op-v>,) -> bool;
+
+    //q6-avg
+    q6-avg: func(v: list<q6-join-output>) -> u64;
+
+    //q7
+    q7: func(v: list<q7-bid>) -> q7-bid;
+
+    //e1
+    e1: func(price: u64) -> bool;
+}
+
+world component {
+    import data-type;
+    import q4-records;
+    import q5-records;
+    export u64-compare;
+    export nexmark;
+}

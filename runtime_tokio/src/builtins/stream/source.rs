@@ -1,11 +1,14 @@
-use std::io::{BufRead, BufReader, Read};
-use std::net::{SocketAddr, TcpListener};
+use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use crate::formats::Decode;
 use crate::runner::context::Context;
 
 use time::OffsetDateTime;
+use tokio::io::AsyncBufReadExt;
+use tokio::io::AsyncReadExt;
+use tokio::io::BufReader;
+use tokio_stream::StreamExt;
 
 use crate::builtins::duration::Duration;
 use crate::builtins::format::Format;
@@ -90,7 +93,7 @@ impl<T: Data> Stream<T> {
     }
 
     async fn read_pipe<E: std::error::Error>(
-        rx: impl Read + Unpin,
+        rx: impl AsyncReadExt + Unpin,
         mut decoder: impl for<'a> FnMut(&'a [u8]) -> Result<T, E> + Send + 'static,
         watch: bool,
         tx: tokio::sync::mpsc::Sender<T>,
@@ -98,7 +101,7 @@ impl<T: Data> Stream<T> {
         let mut rx = BufReader::with_capacity(1024 * 30, rx);
         let mut buf = Vec::with_capacity(1024 * 30);
         loop {
-            match rx.read_until(b'\n', &mut buf) {
+            match rx.read_until(b'\n', &mut buf).await {
                 Ok(0) => {
                     tracing::info!("EOF");
                     println!("EOF");
@@ -130,7 +133,7 @@ impl<T: Data> Stream<T> {
         watch: bool,
         tx2: tokio::sync::mpsc::Sender<T>,
     ) {
-        match std::fs::File::open(&path) {
+        match tokio::fs::File::open(&path).await {
             Ok(rx) => Self::read_pipe(rx, decoder, watch, tx2).await,
             Err(e) => panic!("Failed to open file `{}`: {}", path.display(), e),
         }
@@ -142,26 +145,24 @@ impl<T: Data> Stream<T> {
         tx: tokio::sync::mpsc::Sender<T>,
     ) {
         tracing::info!("Trying to listen on {}", addr);
-        let listener = TcpListener::bind(addr).expect("Failed to bind");
+        let socket = tokio::net::TcpListener::bind(addr).await.unwrap();
         tracing::info!("Listening on {}", addr);
-        let (stream, _) = listener.accept().expect("Failed to accept");
+        let (socket, _) = socket.accept().await.unwrap();
         tracing::info!("Accepted connection from {}", addr);
-        let reader = BufReader::new(stream);
-        for line in reader.lines() {
-            match line {
-                Ok(l) => match decoder(l.as_bytes()) {
+        let mut rx = tokio_util::codec::Framed::new(socket, tokio_util::codec::LinesCodec::new());
+        loop {
+            match rx.next().await {
+                Some(Ok(line)) => match decoder(line.as_bytes()) {
                     Ok(data) => {
-                        println!("Decoded: {:?}", data);
+                        tracing::info!("Decoded: {:?}", data);
                         if tx.send(data).await.is_err() {
                             break;
                         }
                     }
-                    Err(e) => println!("Failed to decode: {}", e),
+                    Err(e) => tracing::info!("Failed to decode: {}", e),
                 },
-                Err(e) => {
-                    println!("Failed to read line: {}", e);
-                    break;
-                }
+                Some(Err(e)) => tracing::info!("Failed to read: {}", e),
+                None => break,
             }
         }
     }
@@ -185,7 +186,7 @@ impl<T: Data> Stream<T> {
         let (tx2, rx2) = tokio::sync::mpsc::channel(10);
         ctx.spawn(async move {
             match reader {
-                Reader::Stdin => Self::read_pipe(std::io::stdin(), decoder, false, tx2).await,
+                Reader::Stdin => Self::read_pipe(tokio::io::stdin(), decoder, false, tx2).await,
                 Reader::File { path, watch } => Self::read_file(path, decoder, watch, tx2).await,
                 Reader::Http { addr } => Self::read_http(addr, decoder, tx2).await,
                 Reader::Tcp { addr } => Self::read_socket(addr, decoder, tx2).await,
@@ -194,6 +195,33 @@ impl<T: Data> Stream<T> {
             Ok(())
         });
         Self::_source4(ctx, rx2, extractor, watermark_interval, slack)
+    }
+
+    fn _source3(
+        ctx: &mut Context,
+        mut rx: tokio::sync::mpsc::Receiver<T>,
+        watermark_interval: Duration,
+    ) -> Stream<T> {
+        ctx.operator(move |tx1| async move {
+            let mut watermark_interval = tokio::time::interval(watermark_interval.to_std());
+            loop {
+                tokio::select! {
+                    _ = watermark_interval.tick() => {
+                        tx1.send(Event::Watermark(Time::now())).await?;
+                    },
+                    data = rx.recv() => {
+                        match data {
+                            Some(data) => tx1.send(Event::Data(Time::now(), data)).await?,
+                            None => {
+                                tx1.send(Event::Sentinel).await?;
+                                break;
+                            },
+                        }
+                    }
+                }
+            }
+            Ok(())
+        })
     }
 
     fn _source4(

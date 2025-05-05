@@ -1,8 +1,9 @@
-use std::io::BufWriter;
-use std::io::Write;
 use std::net::SocketAddr;
-use std::net::TcpStream;
 use std::path::PathBuf;
+
+use futures_util::SinkExt;
+use tokio::io::AsyncWriteExt;
+use tokio::io::BufWriter;
 
 use crate::builtins::format::Format;
 use crate::builtins::writer::Writer;
@@ -16,12 +17,12 @@ use super::Stream;
 impl<T: Data> Stream<T> {
     pub fn sink(self, ctx: &mut Context, writer: Writer, encoding: Format) {
         let mut this = self;
-        let (tx, rx) = std::sync::mpsc::channel();
+        let (tx, rx) = tokio::sync::mpsc::channel(100);
         ctx.sink(|| async move {
             loop {
                 let event = this.recv().await;
                 match event {
-                    Event::Data(_, data) => tx.send(data).unwrap(),
+                    Event::Data(_, data) => tx.send(data).await.unwrap(),
                     Event::Watermark(_) => continue,
                     Event::Snapshot(_) => todo!(),
                     Event::Sentinel => break,
@@ -32,24 +33,57 @@ impl<T: Data> Stream<T> {
         Self::sink_encoding(ctx, rx, writer, encoding);
     }
 
+    // async fn write_http(
+    //     rx: tokio::sync::mpsc::Receiver<T>,
+    //     url: Url,
+    //     encoder: impl Encode + 'static,
+    // ) {
+    //     todo!()
+    // let uri: Uri = url.0.to_string().parse().unwrap();
+    // let client = hyper::Client::new();
+    // let (mut tx1, rx1) = futures::channel::mpsc::channel(100);
+    // let req = Request::builder()
+    //     .method(Method::POST)
+    //     .uri(uri)
+    //     .header("content-type", encoder.content_type())
+    //     .body(Body::wrap_stream(rx1))
+    //     .unwrap();
+    // client.request(req).await.unwrap();
+    // let mut buf = vec![0; 1024];
+    // loop {
+    //     match rx.recv().await {
+    //         Some(data) => match encoder.encode(&data, &mut buf) {
+    //             Ok(n) => {
+    //                 tracing::info!("Encoded: {:?}", data);
+    //                 let bytes: Result<_, std::io::Error> =
+    //                     Ok(hyper::body::Bytes::from(buf[0..n].to_vec()));
+    //                 tx1.send(bytes).await.unwrap();
+    //             }
+    //             Err(e) => tracing::info!("Failed to encode: {}", e),
+    //         },
+    //         None => break,
+    //     }
+    // }
+    // }
+
     async fn write_pipe(
-        rx: std::sync::mpsc::Receiver<T>,
+        mut rx: tokio::sync::mpsc::Receiver<T>,
         mut encoder: impl Encode + Send + 'static,
-        tx: impl Write + Unpin,
+        tx: impl AsyncWriteExt + Unpin,
     ) {
         let mut tx = BufWriter::new(tx);
         let mut buf = vec![0; 1024];
         loop {
-            match rx.recv() {
-                Ok(data) => match encoder.encode(&data, &mut buf) {
+            match rx.recv().await {
+                Some(data) => match encoder.encode(&data, &mut buf) {
                     Ok(n) => {
                         tracing::info!("Encoded: {:?}", data);
-                        tx.write_all(&buf[0..n]).unwrap();
+                        tx.write_all(&buf[0..n]).await.unwrap();
                     }
                     Err(e) => tracing::info!("Failed to encode: {}", e),
                 },
-                Err(_) => {
-                    tx.flush().unwrap();
+                None => {
+                    tx.flush().await.unwrap();
                     break;
                 }
             }
@@ -57,46 +91,42 @@ impl<T: Data> Stream<T> {
     }
 
     async fn write_file(
-        rx: std::sync::mpsc::Receiver<T>,
+        rx: tokio::sync::mpsc::Receiver<T>,
         path: PathBuf,
         encoder: impl Encode + Send + 'static,
     ) {
-        match std::fs::File::create(&path) {
+        match tokio::fs::File::create(&path).await {
             Ok(tx) => Self::write_pipe(rx, encoder, tx).await,
             Err(e) => panic!("Failed to open file `{}`: {}", path.display(), e),
         }
     }
 
     async fn write_socket(
-        rx: std::sync::mpsc::Receiver<T>,
+        mut rx: tokio::sync::mpsc::Receiver<T>,
         addr: SocketAddr,
         mut encoder: impl Encode + 'static,
     ) {
-        println!("Connecting to {}", addr);
-        let socket = TcpStream::connect(addr).expect("Failed to connect");
-        println!("Connected to {}", addr);
-        
-        let mut writer = BufWriter::new(socket);
+        tracing::info!("Connecting to {}", addr);
+        let socket = tokio::net::TcpStream::connect(addr).await.unwrap();
+        tracing::info!("Connected to {}", addr);
+        let mut tx = tokio_util::codec::Framed::new(socket, tokio_util::codec::LinesCodec::new());
         let mut buf = vec![0; 1024];
-
-        while let Ok(data) = rx.recv() {
+        while let Some(data) = rx.recv().await {
             match encoder.encode(&data, &mut buf) {
                 Ok(n) => {
-                    println!("Encoded: {:?}", data);
-                    let s = std::str::from_utf8(&buf[..n - 1]).unwrap();
-                    println!("Sending: [{}]", s);
-                    writer.write_all(s.as_bytes()).unwrap();
-                    writer.write_all(b"\n").unwrap();
-                    writer.flush().unwrap();
+                    tracing::info!("Encoded: {:?}", data);
+                    let s = std::str::from_utf8(&buf[0..n - 1]).unwrap(); // -1 to remove trailing newline
+                    tracing::info!("Sending: [{}]", s);
+                    tx.send(s).await.unwrap();
                 }
-                Err(e) => println!("Failed to encode: {}", e),
+                Err(e) => tracing::info!("Failed to encode: {}", e),
             }
         }
     }
 
     fn sink_encoding(
         ctx: &mut Context,
-        rx: std::sync::mpsc::Receiver<T>,
+        rx: tokio::sync::mpsc::Receiver<T>,
         writer: Writer,
         encoding: Format,
     ) {
@@ -114,13 +144,13 @@ impl<T: Data> Stream<T> {
 
     fn sink_writer(
         ctx: &mut Context,
-        rx: std::sync::mpsc::Receiver<T>,
+        rx: tokio::sync::mpsc::Receiver<T>,
         writer: Writer,
         encoder: impl Encode + Send + 'static,
     ) {
         ctx.spawn(async move {
             match writer {
-                Writer::Stdout => Self::write_pipe(rx, encoder, std::io::stdout()).await,
+                Writer::Stdout => Self::write_pipe(rx, encoder, tokio::io::stdout()).await,
                 Writer::File { path } => Self::write_file(rx, path, encoder).await,
                 // Writer::Http { url } => Self::write_http(rx, url, encoder).await,
                 Writer::Tcp { addr } => Self::write_socket(rx, addr, encoder).await,
