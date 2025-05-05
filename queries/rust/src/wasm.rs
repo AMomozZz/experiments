@@ -1,24 +1,70 @@
+#![allow(unused_imports)]
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::error::Error;
+use std::sync::Arc;
+use std::sync::Mutex;
+use wasmtime::component::Accessor;
+use wasmtime::component::AccessorTask;
+use wasmtime::component::Component;
+use wasmtime::component::ComponentExportIndex;
+use wasmtime::component::ErrorContext;
+use wasmtime::component::HostFuture;
+use wasmtime::component::HostStream;
+use wasmtime::component::Instance;
+use wasmtime::component::Linker;
+use wasmtime::component::ResourceTable;
+use wasmtime::component::StreamReader;
+use wasmtime::component::StreamWriter;
+use wasmtime::component::TypedFunc;
+use wasmtime::component::VecBuffer;
+use wasmtime::CacheStore;
+use wasmtime::Config;
+use wasmtime::Engine as WasmEngine;
+use wasmtime::Store;
+use wasmtime_wasi::p3::cli::WasiCliCtx;
+use wasmtime_wasi::p3::cli::WasiCliView;
+use wasmtime_wasi::p3::clocks::WasiClocksCtx;
+use wasmtime_wasi::p3::clocks::WasiClocksView;
+use wasmtime_wasi::p3::filesystem::DirPerms;
+use wasmtime_wasi::p3::filesystem::FilePerms;
+use wasmtime_wasi::p3::filesystem::WasiFilesystemCtx;
+use wasmtime_wasi::p3::filesystem::WasiFilesystemView;
+use wasmtime_wasi::p3::random::WasiRandomCtx;
+use wasmtime_wasi::p3::random::WasiRandomView;
+use wasmtime_wasi::p3::sockets::AllowedNetworkUses;
+use wasmtime_wasi::p3::sockets::SocketAddrCheck;
+use wasmtime_wasi::p3::sockets::WasiSocketsCtx;
+use wasmtime_wasi::p3::sockets::WasiSocketsView;
+use wasmtime_wasi::p3::AccessorTaskFn;
+use wasmtime_wasi::p3::ResourceView;
+use wasmtime_wasi::p2::IoView;
+use wasmtime_wasi::p2::WasiCtx;
+use wasmtime_wasi::p2::WasiCtxBuilder;
+use wasmtime_wasi::p2::WasiView;
+use wasmtime_wasi::p2::WasiImpl;
+
 use std::{cell::RefCell, rc::Rc, fmt::Debug};
 
 use runtime::prelude::*;
-use wasmtime::{component::{Component, Linker, TypedFunc}, Engine as WasmEngine, Store};
-use wasmtime_wasi::{ResourceTable, WasiImpl};
+// use wasmtime::{component::{Component, Linker, TypedFunc}, Engine as WasmEngine, Store};
+// use wasmtime_wasi::{ResourceTable, WasiImpl};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use runtime::prelude::serde::Deserialize;
 
 // host
 pub struct Host {
-        ctx: wasmtime_wasi::WasiCtx,
+        ctx: WasiCtx,
         table: ResourceTable,
     }
     
-    impl wasmtime_wasi::WasiView for Host {
-        fn ctx(&mut self) -> &mut wasmtime_wasi::WasiCtx {
+    impl WasiView for Host {
+        fn ctx(&mut self) -> &mut WasiCtx {
             &mut self.ctx
         }
     }
     
-    impl wasmtime_wasi::IoView for Host {
+    impl IoView for Host {
         fn table(&mut self) -> &mut ResourceTable {
             &mut self.table
         }
@@ -26,7 +72,7 @@ pub struct Host {
     
     impl Host {
         pub fn new() -> Self {
-            let ctx = wasmtime_wasi::WasiCtxBuilder::new().inherit_stdio().build();
+            let ctx = WasiCtxBuilder::new().inherit_stdio().build();
             let table = ResourceTable::new();
             Self { ctx, table }
         }
@@ -54,8 +100,8 @@ impl<I, O> Debug for WasmFunction<I, O> {
 
 impl<I, O> WasmFunction<I, O> 
 where 
-    I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList,
-    O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList,
+    I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList + std::marker::Sync + std::marker::Send,
+    O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList + std::marker::Send + std::marker::Sync + 'static,
 {
     pub fn new(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, guest_wasi_module: &[u8], store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
         // eprintln!("{}", guest_wasi_module.len()); // 92192
@@ -100,6 +146,65 @@ where
         }
     }
 
+    pub async fn call_async(&self, input: I) -> O {
+        enum Event {
+            Write((Option<StreamWriter<VecBuffer<String>>>, VecBuffer<String>)),
+            Read((Option<StreamReader<Vec<String>>>, Vec<String>)),
+        }
+    
+        let mut set = PromisesUnordered::<Event>::new();
+    
+        let func3: TypedFunc<(HostStream<String>,), (HostStream<String>,)> =
+            instance.get_typed_func(&mut *self.store, export).unwrap();
+    
+        let buf = Vec::with_capacity(1024);
+        let (tx, rx) = instance
+            .stream::<String, VecBuffer<String>, Vec<String>, _, _>(&mut *self.store)
+            .unwrap();
+    
+        let (result,) = func3.call_async(&mut *self.store, (rx.into(),)).await.unwrap();
+
+        let res = match self.func {
+            Some(f) => {
+                let result = f.call_async(&mut *self.store.borrow_mut(), input).await.unwrap();
+                f.post_return(&mut *self.store.borrow_mut()).unwrap();
+                result
+            },
+            None => panic!("Function not found: {:?}", self),
+        };
+    
+        set.push(
+            tx.write(VecBuffer::from(vec!["Hello World! (test4)".to_owned()]))
+                .map(Event::Write),
+        );
+        set.push(result.into_reader(&mut *self.store).read(buf).map(Event::Read));
+    
+        func3.post_return_async(&mut *self.store).await.unwrap();
+    
+        while let Ok(Some(event)) = set.next(&mut *self.store).await {
+            match event {
+                Event::Write((Some(tx), _)) => {
+                    println!("Writing");
+                    set.push(
+                        tx.write(VecBuffer::from(vec!["Hello World! (test4)".to_owned()]))
+                            .map(Event::Write),
+                    );
+                }
+                Event::Write(_) => {
+                    println!("Write finished");
+                }
+                Event::Read((Some(reader), buf)) => {
+                    println!("Reading: {:?}", buf);
+                    set.push(reader.read(buf).map(Event::Read));
+                }
+                Event::Read(_) => {
+                    println!("Read error");
+                }
+            }
+        }
+        println!("All done");
+    }
+
     pub fn switch_default(&mut self, guest_wasi_module: &[u8]) {
         let default_pkg_name = match self.pkg_name {
             Some(ref pkg_name) => pkg_name.clone(),
@@ -120,10 +225,10 @@ where
     fn _get_func_from_component(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> wasmtime::component::TypedFunc<I, O> {
         let mut store = store_wrapper.borrow_mut();
         let instance = linker.instantiate(&mut *store, component).unwrap();
-        let intf_export = instance
+        let (_, intf_export) = instance
             .get_export(&mut *store, None, pkg_name)
             .unwrap();
-        let func_export = instance
+        let (_, func_export) = instance
             .get_export(&mut *store, Some(&intf_export), name)
             .unwrap();
         instance

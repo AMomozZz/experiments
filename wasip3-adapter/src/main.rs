@@ -90,5 +90,5 @@ fn main() {
     )
     .expect("write component to disk");
 
-    println!("cargo:rerun-if-changed={}", guest.display());
+    println!("cargo:rerun-if-changed={}", out_dir.display());
 }

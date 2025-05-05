@@ -1,3 +1,4 @@
+use wasmtime::component::HostStream;
 use runtime::prelude::*;
 use crate::{data::Bid, WasmFunction};
 
@@ -29,6 +30,10 @@ pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(u
         Output::new(auction, price, bidder, date_time)
     })
     .drain(ctx);
+}
+
+pub fn run_wasm_stream(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(HostStream<Bid>,), (HostStream<Bid>,)>) {
+    wasm_func.call_async();
 }
 
 // pub fn run_wasm(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(Bid,), (Bid,)>) {
