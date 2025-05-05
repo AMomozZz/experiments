@@ -4,7 +4,7 @@ pub mod e1;
 
 use std::{cell::RefCell, fs::File, io::BufReader, rc::Rc};
 use csv::ReaderBuilder;
-use runtime::{traits::{Timestamp, Data}, prelude::{Context, CurrentThreadRunner, Duration, Stream, serde::de::DeserializeOwned}};
+use runtime::{prelude::{serde::de::DeserializeOwned, Context, CurrentThreadRunner, Duration, Stream}, traits::{Data, Timestamp}};
 use data::Bid;
 use wasm::{Host, WasmFunction};
 use wasmtime::{component::Linker, Config, Engine, Store};
@@ -29,39 +29,63 @@ fn main() {
     let mut linker= Linker::new(&engine);
     wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
-    let wasm_func_q2 = WasmFunction::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "q2");
-    let wasm_func_single_filter = WasmFunction::<(u64, Vec<u64>, ), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "single-filter");
-    let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
-
-    let io_bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
-    let native_bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
-    let wasm_bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
-    let wasm_opt_bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
-    let wasm_opt_bids2 = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
-
-    
     println!("Running io...");
-    timed(move |ctx| stream(ctx, io_bids).drain(ctx));
+    let mut io = ExperimentResult::new("io", 5);
+    for _ in 0..15 {
+        let bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
+        let r = timed(move |ctx| stream(ctx, bids).drain(ctx));
+        io.add(r);
+    }
+    io.print();
 
     println!("Running native opt...");
-    timed(move |ctx| e1::run_opt(stream(ctx, native_bids), ctx));
+    let mut n_opt = ExperimentResult::new("io", 5);
+    for _ in 0..15 {
+        let bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
+        let r = timed(move |ctx| e1::run_opt(stream(ctx, bids), ctx));
+        n_opt.add(r);
+    }
+    n_opt.print();
 
     println!("Running wasm (pass all data)...");
-    timed(move |ctx| e1::run_wasm(stream(ctx, wasm_bids), ctx, wasm_func_q2));
+    let mut wasm = ExperimentResult::new("io", 5);
+    for _ in 0..15 {
+        let bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
+        let wasm_func_q2 = WasmFunction::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "q2");
+        let r = timed(move |ctx| e1::run_wasm(stream(ctx, bids), ctx, wasm_func_q2));
+        wasm.add(r);
+    }
+    wasm.print();
     
     println!("Running wasm opt (pruned data)...");
-    timed(move |ctx| e1::run_wasm_sf(stream(ctx, wasm_opt_bids), ctx, wasm_func_single_filter));
+    let mut wasm_opt = ExperimentResult::new("io", 5);
+    for _ in 0..15 {
+        let bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
+        let wasm_func_single_filter = WasmFunction::<(u64, Vec<u64>, ), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "single-filter");
+        let r = timed(move |ctx| e1::run_wasm_sf(stream(ctx, bids), ctx, wasm_func_single_filter));
+        wasm_opt.add(r);
+    }
+    wasm_opt.print();
 
     println!("Running wasm opt2 (pruned data + filter conditions in wasm)...");
-    timed(move |ctx| e1::run_wasm_e1(stream(ctx, wasm_opt_bids2), ctx, wasm_func_e1));
+    let mut wasm_opt2 = ExperimentResult::new("io", 5);
+    for _ in 0..15 {
+        let bids = std::fs::File::open(&format!("{DATA_DIR}/bids.csv")).map(iter::<Bid>);
+        let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
+        let r = timed(move |ctx| e1::run_wasm_e1(stream(ctx, bids), ctx, wasm_func_e1));
+        wasm_opt2.add(r);
+    }
+    wasm_opt2.print();
     
     // print_comparison(&rust_result, &wasm_result, &optimized_result);
 }
 
-fn timed(f: impl FnOnce(&mut Context) + Send + 'static) {
-    let time = std::time::Instant::now();
+fn timed(f: impl FnOnce(&mut Context) + Send + 'static) -> u128 {
+    let start = std::time::Instant::now();
     CurrentThreadRunner::run(f);
-    eprintln!("{}", time.elapsed().as_millis());
+    let stop = start.elapsed().as_millis();
+    // eprintln!("{}", stop);
+    stop
 }
 
 // Buffered CSV reader
@@ -100,23 +124,32 @@ fn stream<T: Data + Timestamp>(
     stream_with(ctx, iter, WATERMARK_FREQUENCY)
 }
 
-// pub struct ExperimentResult {
-//     pub name: String,
-//     pub duration: Duration,
-//     pub events_count: usize,
-//     pub matched_count: usize,
-//     pub throughput: f64,
-// }
+pub struct ExperimentResult {
+    name: String,
+    warmup: u128,
+    durations: Vec<u128>,
+}
 
-// impl ExperimentResult {
-//     pub fn print(&self) {
-//         println!("Experiment: {}", self.name);
-//         println!("  Processed {} events in {:?}", self.events_count, self.duration);
-//         println!("  Found {} matching bids", self.matched_count);
-//         println!("  Throughput: {:.2} events/sec", self.throughput);
-//         println!();
-//     }
-// }
+impl ExperimentResult {
+    pub fn new(name: &str, warmup: u128) -> Self {
+        ExperimentResult { name: name.to_string(), warmup, durations: vec![]}
+    }
+
+    pub fn add(&mut self, r: u128) {
+        self.durations.push(r);
+    }
+
+    pub fn print(&self) {
+        let total_count = self.durations.len() as u128;
+        let avg_need = self.durations.len() as u128 - self.warmup;
+        println!("Experiment: {}", self.name);
+        println!("  All: {:?}", self.durations);
+        println!("  Processed {} events in {}", total_count, self.durations.iter().sum::<u128>());
+        println!("  All {} executions took an average of {} milliseconds", total_count, self.durations.iter().sum::<u128>() / total_count);
+        println!("  The last {} executions took an average of {} milliseconds", avg_need, self.durations.iter().rev().take(avg_need as usize).sum::<u128>() / avg_need);
+        println!();
+    }
+}
 
 // fn print_comparison(
 //     rust_result: &ExperimentResult,
