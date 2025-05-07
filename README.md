@@ -39,7 +39,7 @@ and
 
 ```bash
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-wasm
-cargo r --release --manifest-path=host/Cargo.toml
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e1 10 5
 ```
 
 ## Output
