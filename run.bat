@@ -31,17 +31,18 @@ setlocal enabledelayedexpansion
 @REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid qw-wasm 10000 100
 @REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid qw-wasm 10000 10000
 
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid io
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent io
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-with-map
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid io
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent io
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-with-map
 
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-datas
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-datas-with-map
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-components
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG switch-component
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-datas
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-datas-with-map
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG io-components
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG switch-component
 
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-opt
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q2-opt
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-opt
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q2-opt
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent qs-wasm
-cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG qs-wasm-g
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent qs-wasm-opt
+@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG qs-wasm-g
