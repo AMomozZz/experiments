@@ -8,6 +8,7 @@ use crate::traits::Data;
 
 use super::Stream;
 
+#[derive(Debug)]
 struct HeapEntry<T> {
     time: Time,
     seq: usize,
@@ -56,7 +57,7 @@ impl<T: Data> Stream<T> {
                                 tx.send(Event::Sentinel).await?;
                                 break;
                             }
-                        }
+                        },
                         Event::Snapshot(i) => tx.send(Event::Snapshot(i)).await?
                     },
                     event = other.recv(), if !r_done => match event {
@@ -75,7 +76,7 @@ impl<T: Data> Stream<T> {
                                 tx.send(Event::Sentinel).await?;
                                 break;
                             }
-                        }
+                        },
                         Event::Snapshot(i) => tx.send(Event::Snapshot(i)).await?
                     },
                 };
@@ -116,12 +117,12 @@ impl<T: Data> Stream<T> {
                         Event::Snapshot(i) => tx.send(Event::Snapshot(i)).await?,
                     },
 
-                    else => break,
+                    else => {println!("{:?}",buffer.peek())},
                 }
 
                 let watermark_min = l_watermark.min(r_watermark);
                 while let Some(top) = buffer.peek() {
-                    if top.time <= watermark_min {
+                    if top.time <= watermark_min || (l_done && r_done)  {
                         let HeapEntry { event, .. } = buffer.pop().unwrap();
                         tx.send(event).await?;
                     } else {
