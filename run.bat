@@ -45,4 +45,4 @@ setlocal enabledelayedexpansion
 @REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q2-opt
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent qs-wasm
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponent qs-wasm-opt
-@REM cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG qs-wasm-g
+cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bidComponentG qs-wasm-g

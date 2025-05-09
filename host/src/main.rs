@@ -1,6 +1,7 @@
 pub mod data;
 pub mod wasm;
 pub mod e1;
+pub mod e2;
 
 use std::{cell::RefCell, fs::File, io::BufReader, rc::Rc};
 use csv::ReaderBuilder;
@@ -111,7 +112,32 @@ fn main() {
                 wasm_opt2.add(r);
             }
             wasm_opt2.print();
-        }
+        },
+
+        "e2" => {
+            println!("Running static wasm filter...");
+            let mut wasm_opt2 = ExperimentResult::new("wasm opt2 static", warmup);
+            for _ in 0..total {
+                let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
+                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
+                let r = timed(move |ctx| e1::run_wasm_e1(stream(ctx, bids), ctx, wasm_func_e1));
+                wasm_opt2.add(r);
+            }
+            wasm_opt2.print();
+
+            println!("Running dynamic wasm filter...");
+            let mut wasm_dyn = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
+            for _ in 0..total {
+                let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
+                let mut wasm_func_e2 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
+                let r = timed(move |ctx| {
+                    wasm_func_e2.switch_default(GUEST_RS_WASI_MODULE);
+                    e2::run_wasm_e2(stream(ctx, bids), ctx, wasm_func_e2)
+                });
+                wasm_dyn.add(r);
+            }
+            wasm_dyn.print();
+        },
 
         _ => panic!("unknown experiment"),
     }
