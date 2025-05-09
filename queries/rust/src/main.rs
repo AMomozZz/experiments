@@ -170,7 +170,7 @@ fn main() {
         },
         "qs-wasm-opt" => {
             let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
-            timed(move |ctx| qs::run_wasm_operator_opt(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, empty_wasm_func))
+            timed(move |ctx| qs::run_wasm_operator_opt::<Bid>(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, empty_wasm_func))
         },
         "qs-wasm-g" => {
             let empty_wasm_func = WasmFunction::new_empty(&linker, &engine, &store_wrapper);
