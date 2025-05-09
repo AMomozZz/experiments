@@ -57,7 +57,8 @@ pub fn run_wasm_operator_opt(
     let data_source = data.map(ctx, |bid| Either::Data(EitherData::Bid(bid)));
     let components_source = components.map(ctx, |component| Either::Component(component));
 
-    let mut input = data_source.sorted_merge(ctx, components_source);
+    // let mut input = data_source.sorted_merge(ctx, components_source);
+    let mut input = data_source.merge(ctx, components_source).sorted_heap(ctx);
 
     ctx.operator(move |tx| async move {
         let mut func = empty_wasm_func;
