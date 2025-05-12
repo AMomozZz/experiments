@@ -43,6 +43,7 @@ cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1
 cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e1 10 5
 cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent100 e2 10 5
 cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent10000 e2 10 5
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e3 10 5
 ```
 
 ## Output

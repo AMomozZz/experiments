@@ -2,25 +2,29 @@ use runtime::prelude::*;
 use crate::{data::{Bid, PrunedBid}, wasm::WasmFunction};
 
 #[data]
-struct Output {
+pub struct Output {
     auction: u64,
     price: u64,
+}
+
+pub fn opt_func(bid: Bid) -> std::option::Option<Output> {
+    if bid.auction == 1007
+        || bid.auction == 1020
+        || bid.auction == 2001
+        || bid.auction == 2019
+        || bid.auction == 1087
+    {
+        Option::Some(Output::new(bid.auction, bid.price))
+    } else {
+        Option::None
+    }
 }
 
 // Opt:
 // * Fusion
 pub fn run_opt(bids: Stream<Bid>, ctx: &mut Context) {
     bids.filter_map(ctx, |bid| {
-        if bid.auction == 1007
-            || bid.auction == 1020
-            || bid.auction == 2001
-            || bid.auction == 2019
-            || bid.auction == 1087
-        {
-            Option::Some(Output::new(bid.auction, bid.price))
-        } else {
-            Option::None
-        }
+        opt_func(bid)
     })
     .drain(ctx);
 }
