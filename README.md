@@ -25,6 +25,7 @@ cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --auct
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --dir nexmark-data/bidComponent
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name qs --dir nexmark-data/bidComponent
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name qs-g --dir nexmark-data/bidComponent
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name e1 --each 100 --dir nexmark-data/bidComponent100
 ```
 
 ```bash
@@ -40,6 +41,8 @@ and
 ```bash
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-wasm
 cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e1 10 5
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent100 e2 10 5
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent10000 e2 10 5
 ```
 
 ## Output

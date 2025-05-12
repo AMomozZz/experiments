@@ -1,13 +1,14 @@
 pub mod data;
 pub mod wasm;
+pub mod either;
 pub mod e1;
 pub mod e2;
 
 use std::{cell::RefCell, fs::File, io::BufReader, rc::Rc};
 use csv::ReaderBuilder;
 use runtime::{prelude::{serde::de::DeserializeOwned, Context, CurrentThreadRunner, Duration, Stream}, traits::{Data, Timestamp}};
-use data::Bid;
-use wasm::{Host, WasmFunction};
+use data::{Bid, PrunedBid};
+use wasm::{Host, WasmComponent, WasmFunction};
 use wasmtime::{component::Linker, Config, Engine, Store};
 use wasmtime_wasi::WasiImpl;
 
@@ -112,31 +113,76 @@ fn main() {
                 wasm_opt2.add(r);
             }
             wasm_opt2.print();
+
+            println!("Running wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)...");
+            let mut wasm_opt3 = ExperimentResult::new("wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)", warmup);
+            for _ in 0..total {
+                let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "all-in-wasm-not-pruned");
+                let r = timed(move |ctx| e1::run_wasm_e1_all_in_wasm_g::<Bid>(stream(ctx, bids), ctx, wasm_func_e1));
+                wasm_opt3.add(r);
+            }
+            wasm_opt3.print();
+
+            println!("Running wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)...");
+            let mut wasm_opt4 = ExperimentResult::new("wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)", warmup);
+            for _ in 0..total {
+                let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "all-in-wasm");
+                let r = timed(move |ctx| e1::run_wasm_e1_all_in_wasm(stream(ctx, bids), ctx, wasm_func_e1));
+                wasm_opt4.add(r);
+            }
+            wasm_opt4.print();
         },
 
         "e2" => {
-            println!("Running static wasm filter...");
-            let mut wasm_opt2 = ExperimentResult::new("wasm opt2 static", warmup);
+            println!("Running io...");
+            let mut io = ExperimentResult::new("io", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
-                let r = timed(move |ctx| e1::run_wasm_e1(stream(ctx, bids), ctx, wasm_func_e1));
+                let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                let r = timed(move |ctx| {
+                    stream(ctx, bids).drain(ctx);
+                    stream_with(ctx, components_bids, 1).drain(ctx);
+                });
+                io.add(r);
+            }
+            io.print();
+
+            println!("Running dynamic wasm opt2 filter...");
+            let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
+            for i in 0..total {
+                println!("{i}");
+                let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
+                let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new_empty_with_name(&linker, &engine, &store_wrapper, "pkg:component/nexmark", "e1");
+                let r = timed(move |ctx| e2::run_wasm_e2(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, wasm_func_e1));
                 wasm_opt2.add(r);
             }
             wasm_opt2.print();
 
-            println!("Running dynamic wasm filter...");
-            let mut wasm_dyn = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
+            println!("Running dynamic wasm opt3 filter...");
+            let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup);
+            for i in 0..total {
+                println!("{i}");
+                let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
+                let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new_empty_with_name(&linker, &engine, &store_wrapper, "pkg:component/nexmark", "all-in-wasm-not-pruned");
+                let r = timed(move |ctx| e2::run_wasm_operator_g(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, wasm_func_e1));
+                wasm_opt3.add(r);
+            }
+            wasm_opt3.print();
+
+            println!("Running dynamic wasm opt4 filter...");
+            let mut wasm_opt4 = ExperimentResult::new("wasm opt4 dynamic reload", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let mut wasm_func_e2 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
-                let r = timed(move |ctx| {
-                    wasm_func_e2.switch_default(GUEST_RS_WASI_MODULE);
-                    e2::run_wasm_e2(stream(ctx, bids), ctx, wasm_func_e2)
-                });
-                wasm_dyn.add(r);
+                let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new_empty_with_name(&linker, &engine, &store_wrapper, "pkg:component/nexmark", "all-in-wasm");
+                let r = timed(move |ctx| e2::run_wasm_operator(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, wasm_func_e1));
+                wasm_opt4.add(r);
             }
-            wasm_dyn.print();
+            wasm_opt4.print();
         },
 
         _ => panic!("unknown experiment"),

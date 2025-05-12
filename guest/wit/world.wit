@@ -44,6 +44,11 @@ interface data-type {
         ty-string(string),
     }
 
+    record pruned-bid {
+        auction: u64,
+        price: u64,
+    }
+
     variant compare-op-v {
         eq(tuple<value, value>),    // ==
         ne(tuple<value, value>),    // !=
@@ -112,7 +117,7 @@ interface q7-records {
 }
 
 interface nexmark {
-    use data-type.{bid, auction, compare-op-v, value};
+    use data-type.{bid, auction, compare-op-v, value, pruned-bid};
     use q4-records.{q4-auction, q4-bid};
     use q5-records.{q5-bid};
     use q6-records.{q6-join-output};
@@ -168,6 +173,10 @@ interface nexmark {
 
     //e1
     e1: func(price: u64) -> bool;
+
+    all-in-wasm: func(bid: bid) -> option<pruned-bid>;
+
+    all-in-wasm-not-pruned: func(bid: bid) -> option<bid>;
 }
 
 world component {

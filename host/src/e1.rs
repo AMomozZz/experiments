@@ -1,5 +1,5 @@
 use runtime::prelude::*;
-use crate::{data::Bid, wasm::WasmFunction};
+use crate::{data::{Bid, PrunedBid}, wasm::WasmFunction};
 
 #[data]
 struct Output {
@@ -61,6 +61,23 @@ pub fn run_wasm_e1(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction
             true => Option::Some(Output::new(bid.auction, bid.price)),
             false => Option::None,
         }
+    })
+    .drain(ctx);
+}
+
+pub fn run_wasm_e1_all_in_wasm_g<T>(bids: Stream<T>, ctx: &mut Context, wasm_func: WasmFunction<(T,), (Option<T>,)>)
+where 
+T: Clone + Unpin + for<'a> runtime::prelude::serde::Deserialize<'a> + runtime::prelude::serde::Serialize + std::fmt::Debug + std::marker::Send+ std::marker::Sync + wasmtime::component::Lower + wasmtime::component::ComponentType + wasmtime::component::Lift + 'static
+{
+    bids.filter_map(ctx, move |bid| {
+        wasm_func.call((bid.clone(),)).0
+    })
+    .drain(ctx);
+}
+
+pub fn run_wasm_e1_all_in_wasm(bids: Stream<Bid>, ctx: &mut Context, wasm_func: WasmFunction<(Bid,), (Option<PrunedBid>,)>) {
+    bids.filter_map(ctx, move |bid| {
+        wasm_func.call((bid.clone(),)).0
     })
     .drain(ctx);
 }

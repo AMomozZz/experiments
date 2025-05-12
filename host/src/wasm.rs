@@ -85,6 +85,18 @@ where
         }
     }
 
+    pub fn new_empty_with_name(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
+        let clone_store_wrapper = store_wrapper.clone();
+        WasmFunction {
+            func: None,
+            store: clone_store_wrapper,
+            linker: linker.clone(),
+            engine: engine.clone(),
+            pkg_name: Some(pkg_name.to_string()),
+            name: Some(name.to_string()),
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.func.is_none()
     }

@@ -82,8 +82,10 @@ struct Args {
     wasm_dir: PathBuf,
     #[clap(long, default_value = "pkg:component/nexmark")]
     pkg_name: String,
-    #[clap(long, default_value = "qs")]
+    #[clap(long, default_value = "e2")]
     name: String,
+    #[clap(long, default_value = "100")]
+    each: usize,
     #[clap(long, default_value = ".")]
     dir: PathBuf,
 }
@@ -155,7 +157,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let progress = m / p;
                     println!("{name}: {progress}%");
                 }
-                if m % p == 0 && args.components == true {
+                if m % args.each == 0 && args.components == true {
                     components_event_queue.push_back(e.clone());
                 }
             })
@@ -178,10 +180,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .into_iter()
         .enumerate()
         .inspect(|(i, _)| {
-            let p = n / 10;
+            let p = n / 100;
             if i % p == 0 {
                 let progress = i / p;
-                println!("{}: {}%", format!("component_{}", name), progress*10);
+                println!("{}: {}%", format!("component_{}", name), progress);
             }
         })
         .map(|(_, e)| {

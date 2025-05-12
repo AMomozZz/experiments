@@ -2,7 +2,7 @@ wit_bindgen::generate!({
     world: "component",
 });
 
-use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid};
+use exports::pkg::component::nexmark::{Auction, Bid, CompareOpV, Guest as NexmarkGuest, Q4Auction, Q4Bid, Q5Bid, Q6JoinOutput, Q7Bid, PrunedBid};
 use exports::pkg::component::u64_compare::Guest as U64CompareGuest;
 use crate::pkg::component::data_type::Value;
 
@@ -42,6 +42,32 @@ impl NexmarkGuest for Component {
             return true;
         }
         return false;
+    }
+
+    fn all_in_wasm(bid: Bid,) -> Option<PrunedBid> {
+        let p = bid.auction;
+        if p == 1007
+            || p == 1020
+            || p == 2001
+            || p == 2019
+            || p == 1087
+        {
+            return Some(PrunedBid {auction: bid.auction, price: bid.price})
+        }
+        return None
+    }
+
+    fn all_in_wasm_not_pruned(bid: Bid,) -> Option<Bid> {
+        let p = bid.auction;
+        if p == 1007
+            || p == 1020
+            || p == 2001
+            || p == 2019
+            || p == 1087
+        {
+            return Some(Bid {auction: bid.auction, price: bid.price, bidder: bid.bidder, date_time: bid.date_time, channel: bid.channel, url: bid.url, extra: bid.extra })
+        }
+        return None
     }
 
     #[doc = "multi-filter"]
