@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, fmt::Debug};
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use runtime::prelude::*;
 use wasmtime::{component::{Component, Linker, TypedFunc}, Engine as WasmEngine, Store};
@@ -34,7 +34,7 @@ pub struct Host {
 
 #[derive(Clone, Send, Sync, Timestamp)]
 pub struct WasmFunction<I, O> {
-    store: Rc<RefCell<Store<WasiImpl<Host>>>>,
+    store: Option<Rc<RefCell<Store<WasiImpl<Host>>>>>,
     func: Option<TypedFunc<I, O>>,
     linker: Linker<WasiImpl<Host>>,
     engine: WasmEngine,
@@ -46,6 +46,7 @@ impl<I, O> Debug for WasmFunction<I, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WasmFunction")
         .field("func", &self.func.iter().len())
+        .field("store", &self.store.iter().len())
         .field("pkg_name", &self.pkg_name)
         .field("name", &self.name)
         .finish()
@@ -57,15 +58,16 @@ where
     I: wasmtime::component::Lower + wasmtime::component::ComponentNamedList,
     O: wasmtime::component::Lift + wasmtime::component::ComponentNamedList,
 {
-    pub fn new(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, guest_wasi_module: &[u8], store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
+    pub fn new(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, guest_wasi_module: &[u8], pkg_name: &str, name: &str) -> Self {
         // eprintln!("{}", guest_wasi_module.len()); // 92192
         let component = Component::from_binary(engine, guest_wasi_module).unwrap();
         // let a = component.serialize().unwrap();
         // eprintln!("{}", a.len()); // 341360
-        let clone_store_wrapper = store_wrapper.clone();
+        // let clone_store_wrapper = store_wrapper.clone();
+        let (func, store) = Self::_get_func_from_component(linker, engine, &component, pkg_name, name);
         WasmFunction {
-            func: Some(Self::_get_func_from_component(linker, &component, &clone_store_wrapper, pkg_name, name)),
-            store: clone_store_wrapper,
+            func,
+            store,
             linker: linker.clone(),
             engine: engine.clone(),
             pkg_name: Some(pkg_name.to_string()),
@@ -73,11 +75,11 @@ where
         }
     }
 
-    pub fn new_empty(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>) -> Self {
-        let clone_store_wrapper = store_wrapper.clone();
+    pub fn new_empty(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine) -> Self {
+        // let clone_store_wrapper = store_wrapper.clone();
         WasmFunction {
             func: None,
-            store: clone_store_wrapper,
+            store: None,
             linker: linker.clone(),
             engine: engine.clone(),
             pkg_name: None,
@@ -85,11 +87,11 @@ where
         }
     }
 
-    pub fn new_empty_with_name(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> Self {
-        let clone_store_wrapper = store_wrapper.clone();
+    pub fn new_empty_with_name(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, pkg_name: &str, name: &str) -> Self {
+        // let clone_store_wrapper = store_wrapper.clone();
         WasmFunction {
             func: None,
-            store: clone_store_wrapper,
+            store: None,
             linker: linker.clone(),
             engine: engine.clone(),
             pkg_name: Some(pkg_name.to_string()),
@@ -102,13 +104,13 @@ where
     }
 
     pub fn call(&self, input: I) -> O {
-        match self.func {
-            Some(f) => {
-                let result = f.call(&mut *self.store.borrow_mut(), input).unwrap();
-                f.post_return(&mut *self.store.borrow_mut()).unwrap();
+        match (self.func, self.store.clone()) {
+            (Some(f), Some(s)) => {
+                let result = f.call(&mut *s.borrow_mut(), input).unwrap();
+                f.post_return(&mut *s.borrow_mut()).unwrap();
                 result
             },
-            None => panic!("Function not found: {:?}", self),
+            _ => panic!("Function or/and store not found: {:?}", self),
         }
     }
 
@@ -126,11 +128,15 @@ where
 
     pub fn switch(&mut self, guest_wasi_module: &[u8], pkg_name: &str, name: &str) {
         let component = Component::from_binary(&self.engine, guest_wasi_module).unwrap();
-        self.func = Some(Self::_get_func_from_component(&self.linker, &component, &self.store, pkg_name, name))
+        (self.func, self.store) = Self::_get_func_from_component(&self.linker, &self.engine, &component, pkg_name, name);
     }
 
-    fn _get_func_from_component(linker: &Linker<WasiImpl<Host>>, component: &Component, store_wrapper: &Rc<RefCell<Store<WasiImpl<Host>>>>, pkg_name: &str, name: &str) -> wasmtime::component::TypedFunc<I, O> {
-        let mut store = store_wrapper.borrow_mut();
+    fn _get_func_from_component(linker: &Linker<WasiImpl<Host>>, engine: &WasmEngine, component: &Component, pkg_name: &str, name: &str) -> (Option<wasmtime::component::TypedFunc<I, O>>, Option<Rc<RefCell<Store<WasiImpl<Host>>>>>) {
+        let host = Host::new();
+        let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
+        let store_wrapper: Rc<RefCell<Store<WasiImpl<Host>>>> = Rc::new(RefCell::new(Store::new(&engine, wi)));
+        let n = store_wrapper.clone();
+        let mut store = n.borrow_mut();
         let instance = linker.instantiate(&mut *store, component).unwrap();
         let intf_export = instance
             .get_export(&mut *store, None, pkg_name)
@@ -138,9 +144,9 @@ where
         let func_export = instance
             .get_export(&mut *store, Some(&intf_export), name)
             .unwrap();
-        instance
+        (Some(instance
             .get_typed_func::<I, O>(&mut *store, func_export)
-            .unwrap()
+            .unwrap()), Some(store_wrapper))
     }
 }
 

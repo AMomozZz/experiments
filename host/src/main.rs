@@ -4,12 +4,12 @@ pub mod either;
 pub mod e1;
 pub mod e2;
 
-use std::{cell::RefCell, fs::File, io::BufReader, rc::Rc};
+use std::{fs::File, io::BufReader};
 use csv::ReaderBuilder;
 use runtime::{prelude::{serde::de::DeserializeOwned, Context, CurrentThreadRunner, Duration, Stream}, traits::{Data, Timestamp}};
 use data::{Bid, PrunedBid};
 use wasm::{Host, WasmComponent, WasmFunction};
-use wasmtime::{component::Linker, Config, Engine, Store};
+use wasmtime::{component::Linker, Config, Engine};
 use wasmtime_wasi::WasiImpl;
 
 const USAGE: &str = "Usage: cargo run <data-dir> <experiment-id> <measure-experiment-num> <warmup-num>";
@@ -58,10 +58,12 @@ fn main() {
 
     let config = Config::new();
     let engine = Engine::new(&config).unwrap();
-    let host = Host::new();
-    let wi: WasiImpl<Host> = WasiImpl(wasmtime_wasi::IoImpl::<Host>(host));
-    let store_wrapper = Rc::new(RefCell::new(Store::new(&engine, wi)));
     let mut linker= Linker::new(&engine);
+
+    // let host = Host::new();
+    // let wi: Rc<RefCell<WasiImpl<Host>>> = Rc::new(RefCell::new(WasiImpl(wasmtime_wasi::IoImpl::<Host>(host))));
+    // let store_wrapper: Rc<RefCell<Store<WasiImpl<Host>>>> = Rc::new(RefCell::new(Store::new(&engine, wi)));
+    
     wasmtime_wasi::add_to_linker_sync::<WasiImpl<Host>>(&mut linker).unwrap();
 
     match experiment.as_str() {
@@ -88,7 +90,7 @@ fn main() {
             let mut wasm = ExperimentResult::new("wasm (pass all data)", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let wasm_func_q2 = WasmFunction::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "q2");
+                let wasm_func_q2 = WasmFunction::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "q2");
                 let r = timed(move |ctx| e1::run_wasm(stream(ctx, bids), ctx, wasm_func_q2));
                 wasm.add(r);
             }
@@ -98,7 +100,7 @@ fn main() {
             let mut wasm_opt = ExperimentResult::new("wasm opt (pruned data)", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let wasm_func_single_filter = WasmFunction::<(u64, Vec<u64>, ), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "single-filter");
+                let wasm_func_single_filter = WasmFunction::<(u64, Vec<u64>, ), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "single-filter");
                 let r = timed(move |ctx| e1::run_wasm_sf(stream(ctx, bids), ctx, wasm_func_single_filter));
                 wasm_opt.add(r);
             }
@@ -108,7 +110,7 @@ fn main() {
             let mut wasm_opt2 = ExperimentResult::new("wasm opt2 (pruned data + filter conditions in wasm)", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "e1");
+                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "e1");
                 let r = timed(move |ctx| e1::run_wasm_e1(stream(ctx, bids), ctx, wasm_func_e1));
                 wasm_opt2.add(r);
             }
@@ -118,7 +120,7 @@ fn main() {
             let mut wasm_opt3 = ExperimentResult::new("wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "all-in-wasm-not-pruned");
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "all-in-wasm-not-pruned");
                 let r = timed(move |ctx| e1::run_wasm_e1_all_in_wasm_g::<Bid>(stream(ctx, bids), ctx, wasm_func_e1));
                 wasm_opt3.add(r);
             }
@@ -128,7 +130,7 @@ fn main() {
             let mut wasm_opt4 = ExperimentResult::new("wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)", warmup);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
-                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, &store_wrapper, "pkg:component/nexmark", "all-in-wasm");
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "all-in-wasm");
                 let r = timed(move |ctx| e1::run_wasm_e1_all_in_wasm(stream(ctx, bids), ctx, wasm_func_e1));
                 wasm_opt4.add(r);
             }
@@ -151,11 +153,10 @@ fn main() {
 
             println!("Running dynamic wasm opt2 filter...");
             let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
-            for i in 0..total {
-                println!("{i}");
+            for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
-                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new_empty_with_name(&linker, &engine, &store_wrapper, "pkg:component/nexmark", "e1");
+                let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "e1");
                 let r = timed(move |ctx| e2::run_wasm_e2(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, wasm_func_e1));
                 wasm_opt2.add(r);
             }
@@ -163,11 +164,10 @@ fn main() {
 
             println!("Running dynamic wasm opt3 filter...");
             let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup);
-            for i in 0..total {
-                println!("{i}");
+            for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
-                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new_empty_with_name(&linker, &engine, &store_wrapper, "pkg:component/nexmark", "all-in-wasm-not-pruned");
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "all-in-wasm-not-pruned");
                 let r = timed(move |ctx| e2::run_wasm_operator_g(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, wasm_func_e1));
                 wasm_opt3.add(r);
             }
@@ -178,7 +178,7 @@ fn main() {
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
-                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new_empty_with_name(&linker, &engine, &store_wrapper, "pkg:component/nexmark", "all-in-wasm");
+                let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "all-in-wasm");
                 let r = timed(move |ctx| e2::run_wasm_operator(stream(ctx, bids), stream_with(ctx, components_bids, 1), ctx, wasm_func_e1));
                 wasm_opt4.add(r);
             }
