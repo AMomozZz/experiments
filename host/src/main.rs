@@ -83,6 +83,7 @@ fn main() {
                     io.add(r);
                 }
                 io.print();
+                io.in_file(experiment.as_str(), i);
 
                 println!("Running native opt...");
                 let mut n_opt = ExperimentResult::new("native opt", warmup);
@@ -303,6 +304,72 @@ fn main() {
             }
         },
 
+        "e4" => {
+            let v = vec![1, 10, 100, 1000, 10000];//, 100000, 1000000, 10000000];
+
+            for i in v {
+                println!("Running e4 in loop {}", i);
+
+                println!("Running io...");
+                let mut io = ExperimentResult::new("io", warmup);
+                for _ in 0..total {
+                    let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                    let r = timed(move |_ctx| {
+                        for components in components_bids.unwrap().take(i) {
+                            let _input = black_box(components);
+                        }
+                    });
+                    io.add(r);
+                }
+                io.print();
+
+                println!("Running dynamic wasm opt2 filter...");
+                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
+                for _ in 0..total {
+                    let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                    let mut wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "e1");
+                    let r = timed(move |_ctx| {
+                        for components in components_bids.unwrap().take(i) {
+                            let input = black_box(components);
+                            let _output = black_box(wasm_func_e1.switch_default(&input.file));
+                        }
+                    });
+                    wasm_opt2.add(r);
+                }
+                wasm_opt2.print();
+
+                println!("Running dynamic wasm opt3 filter...");
+                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup);
+                for _ in 0..total {
+                    let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                    let mut wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "all-in-wasm-not-pruned");
+                    let r = timed(move |_ctx| {
+                        for components in components_bids.unwrap().take(i) {
+                            let input = black_box(components);
+                            let _output = black_box(wasm_func_e1.switch_default(&input.file));
+                        }
+                    });
+                    wasm_opt3.add(r);
+                }
+                wasm_opt3.print();
+
+                println!("Running dynamic wasm opt4 filter...");
+                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 dynamic reload", warmup);
+                for _ in 0..total {
+                    let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
+                    let mut wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "all-in-wasm");
+                    let r = timed(move |_ctx| {
+                        for components in components_bids.unwrap().take(i) {
+                            let input = black_box(components);
+                            let _output = black_box(wasm_func_e1.switch_default(&input.file));
+                        }
+                    });
+                    wasm_opt4.add(r);
+                }
+                wasm_opt4.print();
+            }
+        },
+
         _ => panic!("unknown experiment"),
     }
 }
@@ -382,30 +449,8 @@ impl ExperimentResult {
         println!("  The last {} executions took an average of {} milliseconds", avg_need, self.durations.iter().rev().take(avg_need as usize).sum::<u128>() / avg_need);
         println!();
     }
-}
 
-// fn print_comparison(
-//     rust_result: &ExperimentResult,
-//     wasm_result: &ExperimentResult,
-//     optimized_result: &ExperimentResult
-// ) {
-//     println!("=== Performance Comparison ===");
-    
-//     println!("Baseline (Rust Native): {:.2} events/sec", rust_result.throughput);
-    
-//     let wasm_relative = wasm_result.throughput / rust_result.throughput;
-//     println!(
-//         "WebAssembly UDF: {:.2} events/sec ({:.2}x of baseline)", 
-//         wasm_result.throughput, 
-//         wasm_relative
-//     );
-    
-//     let optimized_relative = optimized_result.throughput / rust_result.throughput;
-//     let optimized_vs_basic = optimized_result.throughput / wasm_result.throughput;
-//     println!(
-//         "Optimized WebAssembly UDF: {:.2} events/sec ({:.2}x of baseline, {:.2}x of basic WASM)", 
-//         optimized_result.throughput, 
-//         optimized_relative,
-//         optimized_vs_basic
-//     );
-// }
+    pub fn in_file(&self, experiment: &str, size: usize) {
+        
+    }
+}
