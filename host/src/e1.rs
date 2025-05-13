@@ -7,24 +7,20 @@ pub struct Output {
     price: u64,
 }
 
-pub fn opt_func(bid: Bid) -> std::option::Option<Output> {
-    if bid.auction == 1007
-        || bid.auction == 1020
-        || bid.auction == 2001
-        || bid.auction == 2019
-        || bid.auction == 1087
-    {
-        Option::Some(Output::new(bid.auction, bid.price))
-    } else {
-        Option::None
-    }
-}
-
 // Opt:
 // * Fusion
 pub fn run_opt(bids: Stream<Bid>, ctx: &mut Context) {
     bids.filter_map(ctx, |bid| {
-        opt_func(bid)
+        if bid.auction == 1007
+            || bid.auction == 1020
+            || bid.auction == 2001
+            || bid.auction == 2019
+            || bid.auction == 1087
+        {
+            Option::Some(Output::new(bid.auction, bid.price))
+        } else {
+            Option::None
+        }
     })
     .drain(ctx);
 }
