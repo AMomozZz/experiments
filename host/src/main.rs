@@ -3,10 +3,10 @@ pub mod wasm;
 pub mod either;
 pub mod e1;
 pub mod e2;
+pub mod e3;
 
 use std::{fs::File, io::BufReader};
 use csv::ReaderBuilder;
-use e1::Output;
 use runtime::{prelude::{serde::de::DeserializeOwned, Context, CurrentThreadRunner, Duration, Stream}, traits::{Data, Timestamp}};
 use data::{Bid, PrunedBid};
 use wasm::{Host, WasmComponent, WasmFunction};
@@ -219,7 +219,7 @@ fn main() {
                     let r = timed(move |_ctx| {
                         for bid in bids.unwrap().take(i) {
                             let input = black_box(bid);
-                            let _output = black_box(e1::opt_func(input));
+                            let _output = black_box(e3::opt_func(input));
                         }
                     });
                     n_opt.add(r);
@@ -234,12 +234,7 @@ fn main() {
                     let r = timed(move |_ctx| {
                         for bid in bids.unwrap().take(i) {
                             let input = black_box(bid);
-                            let v: Vec<u64> = vec![1007, 1020, 2001, 2019, 1087];
-                            let (result,) = wasm_func_q2.call((input.auction, input.price, v.clone()));
-                            let _output = black_box(match result {
-                                Some((auction, price)) => Option::Some(Output::new(auction, price)),
-                                None => Option::None,
-                            });
+                            let _output = black_box(e3::run_wasm_func(input, |args| wasm_func_q2.call(args)));
                         }
                     });
                     wasm.add(r);
@@ -254,12 +249,7 @@ fn main() {
                     let r = timed(move |_ctx| {
                         for bid in bids.unwrap().take(i) {
                             let input = black_box(bid);
-                            let v: Vec<u64> = vec![1007, 1020, 2001, 2019, 1087];
-                            let (result,) = wasm_func_single_filter.call((input.auction, v.clone()));
-                            let _output = black_box(match result {
-                                true => Option::Some(Output::new(input.auction, input.price)),
-                                false => Option::None,
-                            });
+                            let _output = black_box(e3::run_wasm_sf_func(input, |args| wasm_func_single_filter.call(args)));
                         }
                     });
                     wasm_opt.add(r);
@@ -274,11 +264,7 @@ fn main() {
                     let r = timed(move |_ctx| {
                         for bid in bids.unwrap().take(i) {
                             let input = black_box(bid);
-                            let (result,) = wasm_func_e1.call((input.auction,));
-                            let _output = black_box(match result {
-                                true => Option::Some(Output::new(input.auction, input.price)),
-                                false => Option::None,
-                            });
+                            let _output = black_box(e3::run_wasm_e1_func(input, |args| wasm_func_e1.call(args)));
                         }
                     });
                     wasm_opt2.add(r);
