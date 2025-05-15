@@ -5,16 +5,17 @@ pub mod e1;
 pub mod e2;
 pub mod e3;
 
-use std::{fs::File, io::BufReader};
-use csv::ReaderBuilder;
+use std::{fs::{File, OpenOptions}, io::{BufReader, BufWriter}};
+use csv::{ReaderBuilder, WriterBuilder};
 use runtime::{prelude::{serde::de::DeserializeOwned, Context, CurrentThreadRunner, Duration, Stream}, traits::{Data, Timestamp}};
 use data::{Bid, PrunedBid};
 use wasm::{Host, WasmComponent, WasmFunction};
 use wasmtime::{component::Linker, Config, Engine};
 use wasmtime_wasi::WasiImpl;
 use std::hint::black_box;
+use chrono::Utc;
 
-const USAGE: &str = "Usage: cargo run <data-dir> <experiment-id> <measure-experiment-num> <warmup-num>";
+const USAGE: &str = "Usage: cargo run <data-dir> <experiment-id> <measure-experiment-num> <warmup-num> <output-dir>";
 
 const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -54,6 +55,10 @@ fn main() {
         eprintln!("Invalid number: {warmup}");
         return;
     };
+    let Some(output_dir) = args.next() else {
+        println!("{USAGE}");
+        return;
+    };
 
     let total: u128 = measure + warmup;
     let warmup: u128 = warmup;
@@ -76,7 +81,7 @@ fn main() {
                 println!("Running e1 in loop {}", i);
 
                 println!("Running io...");
-                let mut io = ExperimentResult::new("io", warmup);
+                let mut io = ExperimentResult::new("io", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let r = timed(move |ctx| stream(ctx, bids).drain(ctx));
@@ -86,16 +91,17 @@ fn main() {
                 io.in_file(experiment.as_str(), i);
 
                 println!("Running native opt...");
-                let mut n_opt = ExperimentResult::new("native opt", warmup);
+                let mut n_opt = ExperimentResult::new("native opt", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let r = timed(move |ctx| e1::run_opt(stream(ctx, bids), ctx));
                     n_opt.add(r);
                 }
                 n_opt.print();
+                n_opt.in_file(experiment.as_str(), i);
 
                 println!("Running wasm (pass all data)...");
-                let mut wasm = ExperimentResult::new("wasm (pass all data)", warmup);
+                let mut wasm = ExperimentResult::new("wasm (pass all data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let wasm_func_q2 = WasmFunction::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "q2");
@@ -103,9 +109,10 @@ fn main() {
                     wasm.add(r);
                 }
                 wasm.print();
+                wasm.in_file(experiment.as_str(), i);
                 
                 println!("Running wasm opt (pruned data)...");
-                let mut wasm_opt = ExperimentResult::new("wasm opt (pruned data)", warmup);
+                let mut wasm_opt = ExperimentResult::new("wasm opt (pruned data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let wasm_func_single_filter = WasmFunction::<(u64, Vec<u64>, ), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "single-filter");
@@ -113,9 +120,10 @@ fn main() {
                     wasm_opt.add(r);
                 }
                 wasm_opt.print();
+                wasm_opt.in_file(experiment.as_str(), i);
 
                 println!("Running wasm opt2 (pruned data + filter conditions in wasm)...");
-                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 (pruned data + filter conditions in wasm)", warmup);
+                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 (pruned data + filter conditions in wasm)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "e1");
@@ -123,9 +131,10 @@ fn main() {
                     wasm_opt2.add(r);
                 }
                 wasm_opt2.print();
+                wasm_opt2.in_file(experiment.as_str(), i);
 
                 println!("Running wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)...");
-                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)", warmup);
+                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "all-in-wasm-not-pruned");
@@ -133,9 +142,10 @@ fn main() {
                     wasm_opt3.add(r);
                 }
                 wasm_opt3.print();
+                wasm_opt3.in_file(experiment.as_str(), i);
 
                 println!("Running wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)...");
-                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)", warmup);
+                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(|file| iter_with::<Bid>(file, i));
                     let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "all-in-wasm");
@@ -143,12 +153,15 @@ fn main() {
                     wasm_opt4.add(r);
                 }
                 wasm_opt4.print();
+                wasm_opt4.in_file(experiment.as_str(), i);
             }
         },
 
         "e2" => {
+            let component_len = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>).unwrap().count();
+
             println!("Running io...");
-            let mut io = ExperimentResult::new("io", warmup);
+            let mut io = ExperimentResult::new("io", warmup, &output_dir);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
@@ -159,9 +172,10 @@ fn main() {
                 io.add(r);
             }
             io.print();
+            io.in_file(experiment.as_str(), component_len);
 
             println!("Running dynamic wasm opt2 filter...");
-            let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
+            let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup, &output_dir);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
@@ -170,9 +184,10 @@ fn main() {
                 wasm_opt2.add(r);
             }
             wasm_opt2.print();
+            wasm_opt2.in_file(experiment.as_str(), component_len);
 
             println!("Running dynamic wasm opt3 filter...");
-            let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup);
+            let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup, &output_dir);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
@@ -181,9 +196,10 @@ fn main() {
                 wasm_opt3.add(r);
             }
             wasm_opt3.print();
+            wasm_opt3.in_file(experiment.as_str(), component_len);
 
             println!("Running dynamic wasm opt4 filter...");
-            let mut wasm_opt4 = ExperimentResult::new("wasm opt4 dynamic reload", warmup);
+            let mut wasm_opt4 = ExperimentResult::new("wasm opt4 dynamic reload", warmup, &output_dir);
             for _ in 0..total {
                 let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                 let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
@@ -192,6 +208,7 @@ fn main() {
                 wasm_opt4.add(r);
             }
             wasm_opt4.print();
+            wasm_opt4.in_file(experiment.as_str(), component_len);
         },
 
         "e3" => {
@@ -201,7 +218,7 @@ fn main() {
                 println!("Running e3 in loop {}", i);
 
                 println!("Running io...");
-                let mut io = ExperimentResult::new("io", warmup);
+                let mut io = ExperimentResult::new("io", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let r = timed(move |_ctx| {
@@ -212,9 +229,10 @@ fn main() {
                     io.add(r);
                 }
                 io.print();
+                io.in_file(experiment.as_str(), i);
 
                 println!("Running native opt...");
-                let mut n_opt = ExperimentResult::new("native opt", warmup);
+                let mut n_opt = ExperimentResult::new("native opt", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let r = timed(move |_ctx| {
@@ -226,9 +244,10 @@ fn main() {
                     n_opt.add(r);
                 }
                 n_opt.print();
+                n_opt.in_file(experiment.as_str(), i);
 
                 println!("Running wasm (pass all data)...");
-                let mut wasm = ExperimentResult::new("wasm (pass all data)", warmup);
+                let mut wasm = ExperimentResult::new("wasm (pass all data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let wasm_func_q2 = WasmFunction::<(u64, u64, Vec<u64>,), (Option<(u64, u64)>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "q2");
@@ -241,9 +260,10 @@ fn main() {
                     wasm.add(r);
                 }
                 wasm.print();
+                wasm.in_file(experiment.as_str(), i);
                 
                 println!("Running wasm opt (pruned data)...");
-                let mut wasm_opt = ExperimentResult::new("wasm opt (pruned data)", warmup);
+                let mut wasm_opt = ExperimentResult::new("wasm opt (pruned data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let wasm_func_single_filter = WasmFunction::<(u64, Vec<u64>, ), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "single-filter");
@@ -256,9 +276,10 @@ fn main() {
                     wasm_opt.add(r);
                 }
                 wasm_opt.print();
+                wasm_opt.in_file(experiment.as_str(), i);
 
                 println!("Running wasm opt2 (pruned data + filter conditions in wasm)...");
-                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 (pruned data + filter conditions in wasm)", warmup);
+                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 (pruned data + filter conditions in wasm)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "e1");
@@ -271,9 +292,10 @@ fn main() {
                     wasm_opt2.add(r);
                 }
                 wasm_opt2.print();
+                wasm_opt2.in_file(experiment.as_str(), i);
 
                 println!("Running wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)...");
-                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)", warmup);
+                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 (structured data + filter conditions in wasm + directly returns a not pruned data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "all-in-wasm-not-pruned");
@@ -286,9 +308,10 @@ fn main() {
                     wasm_opt3.add(r);
                 }
                 wasm_opt3.print();
+                wasm_opt3.in_file(experiment.as_str(), i);
 
                 println!("Running wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)...");
-                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)", warmup);
+                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 (structured data + filter conditions in wasm + directly returns a pruned data)", warmup, &output_dir);
                 for _ in 0..total {
                     let bids = std::fs::File::open(&format!("{dir}/bids.csv")).map(iter::<Bid>);
                     let wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new(&linker, &engine, GUEST_RS_WASI_MODULE, "pkg:component/nexmark", "all-in-wasm");
@@ -301,6 +324,7 @@ fn main() {
                     wasm_opt4.add(r);
                 }
                 wasm_opt4.print();
+                wasm_opt4.in_file(experiment.as_str(), i);
             }
         },
 
@@ -311,7 +335,7 @@ fn main() {
                 println!("Running e4 in loop {}", i);
 
                 println!("Running io...");
-                let mut io = ExperimentResult::new("io", warmup);
+                let mut io = ExperimentResult::new("io", warmup, &output_dir);
                 for _ in 0..total {
                     let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
                     let r = timed(move |_ctx| {
@@ -322,9 +346,10 @@ fn main() {
                     io.add(r);
                 }
                 io.print();
+                io.in_file(experiment.as_str(), i);
 
                 println!("Running dynamic wasm opt2 filter...");
-                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup);
+                let mut wasm_opt2 = ExperimentResult::new("wasm opt2 dynamic reload", warmup, &output_dir);
                 for _ in 0..total {
                     let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
                     let mut wasm_func_e1 = WasmFunction::<(u64,), (bool,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "e1");
@@ -337,9 +362,10 @@ fn main() {
                     wasm_opt2.add(r);
                 }
                 wasm_opt2.print();
+                wasm_opt2.in_file(experiment.as_str(), i);
 
                 println!("Running dynamic wasm opt3 filter...");
-                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup);
+                let mut wasm_opt3 = ExperimentResult::new("wasm opt3 dynamic reload", warmup, &output_dir);
                 for _ in 0..total {
                     let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
                     let mut wasm_func_e1 = WasmFunction::<(Bid,), (Option<Bid>,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "all-in-wasm-not-pruned");
@@ -352,9 +378,10 @@ fn main() {
                     wasm_opt3.add(r);
                 }
                 wasm_opt3.print();
+                wasm_opt3.in_file(experiment.as_str(), i);
 
                 println!("Running dynamic wasm opt4 filter...");
-                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 dynamic reload", warmup);
+                let mut wasm_opt4 = ExperimentResult::new("wasm opt4 dynamic reload", warmup, &output_dir);
                 for _ in 0..total {
                     let components_bids = std::fs::File::open(&format!("{dir}/component_bids.csv")).map(iter::<WasmComponent>);
                     let mut wasm_func_e1 = WasmFunction::<(Bid,), (Option<PrunedBid>,)>::new_empty_with_name(&linker, &engine, "pkg:component/nexmark", "all-in-wasm");
@@ -367,6 +394,7 @@ fn main() {
                     wasm_opt4.add(r);
                 }
                 wasm_opt4.print();
+                wasm_opt4.in_file(experiment.as_str(), i);
             }
         },
 
@@ -426,18 +454,26 @@ pub struct ExperimentResult {
     name: String,
     warmup: u128,
     durations: Vec<u128>,
+    output_dir: String,
+    amount_avg: Option<u128>,
+    no_warmup_avg: Option<u128>,
 }
 
 impl ExperimentResult {
-    pub fn new(name: &str, warmup: u128) -> Self {
-        ExperimentResult { name: name.to_string(), warmup, durations: vec![]}
+    pub fn new(name: &str, warmup: u128, output_dir: &String) -> Self {
+        ExperimentResult { 
+            name: name.to_string(), 
+            warmup, durations: vec![], 
+            output_dir: output_dir.to_string(), 
+            amount_avg: None, 
+            no_warmup_avg: None}
     }
 
     pub fn add(&mut self, r: u128) {
         self.durations.push(r);
     }
 
-    pub fn print(&self) {
+    pub fn print(&mut self) {
         let total_count = self.durations.len() as u128;
         let avg_need = self.durations.len() as u128 - self.warmup;
         println!("Experiment: {}", self.name);
@@ -445,12 +481,55 @@ impl ExperimentResult {
             println!("  All: {:?}", self.durations);
         }
         println!("  Processed {} events in {} milliseconds", total_count, self.durations.iter().sum::<u128>());
-        println!("  All {} executions took an average of {} milliseconds", total_count, self.durations.iter().sum::<u128>() / total_count);
-        println!("  The last {} executions took an average of {} milliseconds", avg_need, self.durations.iter().rev().take(avg_need as usize).sum::<u128>() / avg_need);
+        self.amount_avg = Some(self.durations.iter().sum::<u128>() / total_count);
+        println!("  All {} executions took an average of {} milliseconds", total_count, self.amount_avg.unwrap());
+        self.no_warmup_avg = Some(self.durations.iter().rev().take(avg_need as usize).sum::<u128>() / avg_need);
+        println!("  The last {} executions took an average of {} milliseconds", avg_need, self.no_warmup_avg.unwrap());
         println!();
     }
 
+    fn timestamp() -> String {
+        Utc::now().to_rfc3339()
+    }
+
     pub fn in_file(&self, experiment: &str, size: usize) {
+        let file_path = self.output_dir.clone() + "./result/experiment_results.csv";
+        let is_empty = match File::open(&file_path) {
+            Ok(f) => f.metadata().map(|m| m.len() == 0).unwrap_or(true),
+            Err(_) => true,
+        };
         
+        let file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(file_path)
+            .expect("Failed to open output file");
+
+        let writer = BufWriter::new(file);
+        let mut csv_writer = WriterBuilder::new()
+            .has_headers(true)
+            .from_writer(writer);
+
+        if is_empty {
+            csv_writer
+                .write_record(&["timestamp", "experiment", "name", "size", "amount", "warmup", "duration","amount_avg","no_warmup_avg"])
+                .expect("Failed to write header");
+        }
+
+        let record = vec![
+            Self::timestamp().to_string(),
+            experiment.to_string(),
+            self.name.clone(),
+            size.to_string(),
+            self.durations.len().to_string(),
+            self.warmup.to_string(),
+            format!("{:?}", self.durations),
+            self.amount_avg.unwrap().to_string(),
+            self.no_warmup_avg.unwrap().to_string(),
+        ];
+
+        csv_writer
+            .write_record(&record)
+            .expect("Failed to write data");
     }
 }

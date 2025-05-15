@@ -2,7 +2,8 @@
 !/.gitignore
 
 *.jsonl
-*.csv
+# *.csv
+nexmark-data/
 target/
 
 test-guest/

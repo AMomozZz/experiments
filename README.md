@@ -40,11 +40,11 @@ and
 
 ```bash
 cargo r --release --manifest-path=queries/rust/Cargo.toml -- nexmark-data/bid q1-wasm
-cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e1 10 5
-cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent100 e2 10 5
-cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent10000 e2 10 5
-cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e3 10 5
-cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent100 e4 10 5
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e1 10 5 ./host/
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent100 e2 10 5 ./host/
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent10000 e2 10 5 ./host/
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bid e3 10 5 ./host/
+cargo r --release --manifest-path=host/Cargo.toml -- nexmark-data/bidComponent100 e4 10 5 ./host/
 ```
 
 ## Output
