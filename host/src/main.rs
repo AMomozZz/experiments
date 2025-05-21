@@ -17,9 +17,14 @@ use chrono::Utc;
 
 const USAGE: &str = "Usage: cargo run <data-dir> <experiment-id> <measure-experiment-num> <warmup-num> <output-dir>";
 
+// const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
+//     env!("CARGO_MANIFEST_DIR"),
+//     "./../guest/target/wasm32-wasip2/release/component.wasm"
+// ));
+
 const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "./../guest/target/wasm32-wasip2/release/component.wasm"
+    "./../guest/target/wasm32-wasip2/release/component_usedonly.wasm"
 ));
 
 // const DATA_DIR: &str = "nexmark-data/bid";
@@ -493,7 +498,7 @@ impl ExperimentResult {
     }
 
     pub fn in_file(&self, experiment: &str, size: usize) {
-        let file_path = self.output_dir.clone() + "./result/experiment_results.csv";
+        let file_path = self.output_dir.clone() + "./result/experiment_results_usedonly.csv";
         let is_empty = match File::open(&file_path) {
             Ok(f) => f.metadata().map(|m| m.len() == 0).unwrap_or(true),
             Err(_) => true,

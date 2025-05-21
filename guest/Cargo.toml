@@ -1,5 +1,5 @@
 [package]
-name = "component"
+name = "component_usedonly_opt"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,3 +10,8 @@ wit-bindgen = "0.39.0"
 
 [lib]
 crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"
+panic = "abort"
+strip = true

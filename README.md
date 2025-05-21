@@ -26,6 +26,7 @@ cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name qs --dir nexmark-data/bidComponent
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name qs-g --dir nexmark-data/bidComponent
 cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name e1 --each 100 --dir nexmark-data/bidComponent100
+cargo r --manifest-path=data-generator/Cargo.toml -- --num-events 1000000 --bids --components --pkg-name pkg:component/nexmark --name e1 --each 100 --dir nexmark-data/bidComponent100_usedonly
 ```
 
 ```bash
