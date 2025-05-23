@@ -1,5 +1,4 @@
-timestamp,experiment,name,size,amount,warmup,duration
-
+timestamp,experiment,name,size,amount,warmup,duration,amount_avg,no_warmup_avg
 2025-05-13T23:50:47.360871200+00:00,e1,io,100,15,5,"[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",0,0
 2025-05-13T23:50:47.366534200+00:00,e1,native opt,100,15,5,"[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",0,0
 2025-05-13T23:50:47.523337700+00:00,e1,wasm (pass all data),100,15,5,"[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",0,0
