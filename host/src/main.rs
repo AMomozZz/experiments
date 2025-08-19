@@ -15,7 +15,7 @@ use wasmtime_wasi::WasiImpl;
 use std::hint::black_box;
 use chrono::Utc;
 
-const USAGE: &str = "Usage: cargo run <data-dir> <experiment-id> <measure-experiment-num> <warmup-num> <output-dir>";
+const USAGE: &str = "Usage: cargo run <data-dir> <experiment-id> <measure-experiment-num> <warmup-num> <output-path>";
 
 // const GUEST_RS_WASI_MODULE: &[u8] = include_bytes!(concat!(
 //     env!("CARGO_MANIFEST_DIR"),
@@ -415,7 +415,7 @@ fn main() {
 fn timed(f: impl FnOnce(&mut Context) + Send + 'static) -> u128 {
     let start = std::time::Instant::now();
     CurrentThreadRunner::run(f);
-    let stop = start.elapsed().as_millis();
+    let stop = start.elapsed().as_micros();
     // eprintln!("{}", stop);
     stop
 }
@@ -490,11 +490,11 @@ impl ExperimentResult {
         if total_count <= 10 {
             println!("  All: {:?}", self.durations);
         }
-        println!("  Processed {} events in {} milliseconds", total_count, self.durations.iter().sum::<u128>());
+        println!("  Processed {} events in {} microseconds", total_count, self.durations.iter().sum::<u128>());
         self.amount_avg = Some(self.durations.iter().sum::<u128>() / total_count);
-        println!("  All {} executions took an average of {} milliseconds", total_count, self.amount_avg.unwrap());
+        println!("  All {} executions took an average of {} microseconds", total_count, self.amount_avg.unwrap());
         self.no_warmup_avg = Some(self.durations.iter().rev().take(avg_need as usize).sum::<u128>() / avg_need);
-        println!("  The last {} executions took an average of {} milliseconds", avg_need, self.no_warmup_avg.unwrap());
+        println!("  The last {} executions took an average of {} microseconds", avg_need, self.no_warmup_avg.unwrap());
         println!();
     }
 
@@ -503,7 +503,7 @@ impl ExperimentResult {
     }
 
     pub fn in_file(&self, experiment: &str, size: usize) {
-        let file_path = self.output_dir.clone() + "./result/experiment_results_usedonly_opt.csv";
+        let file_path = self.output_dir.clone() + ".csv";
         let is_empty = match File::open(&file_path) {
             Ok(f) => f.metadata().map(|m| m.len() == 0).unwrap_or(true),
             Err(_) => true,
